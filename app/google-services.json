@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "422161695354",
+    "project_id": "socialapplication-7b906",
+    "storage_bucket": "socialapplication-7b906.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:422161695354:android:3531bce90fd074c2e3f1c3",
+        "android_client_info": {
+          "package_name": "vn.edu.ueh.socialapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgg3pF18h1Q0LVCTsvjvMcKgW-7AZy3e0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
