@@ -45,4 +45,11 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             tvContent = itemView.findViewById(R.id.tvCommentContent);
         }
     }
+
+    // Trong CommentAdapter.java
+    public void setCommentList(List<Comment> newCommentList) {
+        this.commentList = newCommentList;
+        notifyDataSetChanged(); // Cập nhật lại toàn bộ RecyclerView
+    }
+
 }
