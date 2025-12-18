@@ -34,7 +34,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         User user = mUsers.get(position);
         holder.userName.setText(user.getUserName());
-        holder.userId.setText(user.getUserId());
+        holder.userId.setText("@" + user.getUserId());
 
         if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
             ImageUtils.loadImage(user.getAvatar(), holder.imageProfile);

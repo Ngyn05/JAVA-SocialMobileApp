@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -18,6 +19,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
 
     private EditText emailInput;
     private Button resetPasswordButton;
+    private ImageView backButton;
 
     private FirebaseAuth mAuth;
 
@@ -28,6 +30,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
 
         emailInput = findViewById(R.id.email_input);
         resetPasswordButton = findViewById(R.id.reset_password_button);
+        backButton = findViewById(R.id.back_button_forgot);
 
         mAuth = FirebaseAuth.getInstance();
 
@@ -37,7 +40,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                 String email = emailInput.getText().toString().trim();
 
                 if (TextUtils.isEmpty(email)) {
-                    Toast.makeText(getApplication(), "Enter your registered email id", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplication(), "Vui lòng nhập email đã đăng ký của bạn", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -46,14 +49,16 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                             @Override
                             public void onComplete(@NonNull Task<Void> task) {
                                 if (task.isSuccessful()) {
-                                    Toast.makeText(ForgotPasswordActivity.this, "Password reset link sent to your email!", Toast.LENGTH_LONG).show();
+                                    Toast.makeText(ForgotPasswordActivity.this, "Liên kết đặt lại mật khẩu đã được gửi đến email của bạn!", Toast.LENGTH_LONG).show();
                                     finish(); // Close the activity
                                 } else {
-                                    Toast.makeText(ForgotPasswordActivity.this, "Failed to send reset email! " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                                    Toast.makeText(ForgotPasswordActivity.this, "Gửi email đặt lại thất bại! " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                                 }
                             }
                         });
             }
         });
+
+        backButton.setOnClickListener(v -> finish());
     }
 }

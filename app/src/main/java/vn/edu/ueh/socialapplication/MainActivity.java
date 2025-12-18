@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int SPLASH_DELAY = 3000; // 3 seconds
+    private static final int SPLASH_DELAY = 2000; // 2 seconds
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
         if (currentUser != null) {
-            // User is already logged in, show splash screen for 3 seconds
+            // User is already logged in, show splash screen for 2 seconds
             setContentView(R.layout.activity_splash);
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 startActivity(new Intent(MainActivity.this, HomeActivity.class));

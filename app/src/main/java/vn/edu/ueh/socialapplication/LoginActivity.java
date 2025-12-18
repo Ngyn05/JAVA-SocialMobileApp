@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,6 +41,7 @@ public class LoginActivity extends AppCompatActivity {
     private EditText emailInput, passwordInput;
     private Button loginButton, googleLoginButton;
     private TextView signupLink, forgotPasswordLink;
+    private ImageView backButton;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -57,6 +59,7 @@ public class LoginActivity extends AppCompatActivity {
         googleLoginButton = findViewById(R.id.google_login_button);
         signupLink = findViewById(R.id.signup_link);
         forgotPasswordLink = findViewById(R.id.forgot_password_link);
+        backButton = findViewById(R.id.back_button_login);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
@@ -73,6 +76,7 @@ public class LoginActivity extends AppCompatActivity {
         signupLink.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, RegisterActivity.class)));
         forgotPasswordLink.setOnClickListener(v -> startActivity(new Intent(LoginActivity.this, ForgotPasswordActivity.class)));
         googleLoginButton.setOnClickListener(v -> signInWithGoogle());
+        backButton.setOnClickListener(v -> finish());
     }
 
     private void signInWithGoogle() {
@@ -89,8 +93,8 @@ public class LoginActivity extends AppCompatActivity {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 firebaseAuthWithGoogle(account.getIdToken());
             } catch (ApiException e) {
-                Log.w(TAG, "Google sign in failed", e);
-                Toast.makeText(this, "Google sign in failed", Toast.LENGTH_SHORT).show();
+                Log.w(TAG, "Đăng nhập Google thất bại", e);
+                Toast.makeText(this, "Đăng nhập Google thất bại", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -103,7 +107,7 @@ public class LoginActivity extends AppCompatActivity {
                         FirebaseUser user = mAuth.getCurrentUser();
                         checkIfNewUserAndSave(user);
                     } else {
-                        Toast.makeText(LoginActivity.this, "Authentication Failed.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LoginActivity.this, "Xác thực thất bại.", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -127,7 +131,7 @@ public class LoginActivity extends AppCompatActivity {
                                 if (saveTask.isSuccessful()) {
                                     navigateToHome();
                                 } else {
-                                    Toast.makeText(LoginActivity.this, "Failed to save user data.", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(LoginActivity.this, "Lưu dữ liệu người dùng thất bại.", Toast.LENGTH_SHORT).show();
                                 }
                             });
                 } else {
@@ -135,7 +139,7 @@ public class LoginActivity extends AppCompatActivity {
                     navigateToHome();
                 }
             } else {
-                Toast.makeText(LoginActivity.this, "Error checking user data.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Lỗi khi kiểm tra dữ liệu người dùng.", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -145,7 +149,7 @@ public class LoginActivity extends AppCompatActivity {
         String password = passwordInput.getText().toString().trim();
 
         if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Email and password are required", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Vui lòng nhập email và mật khẩu", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -154,13 +158,13 @@ public class LoginActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         navigateToHome();
                     } else {
-                        Toast.makeText(LoginActivity.this, "Authentication failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(LoginActivity.this, "Xác thực thất bại: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void navigateToHome() {
-        Toast.makeText(LoginActivity.this, "Login successful.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(LoginActivity.this, "Đăng nhập thành công.", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);

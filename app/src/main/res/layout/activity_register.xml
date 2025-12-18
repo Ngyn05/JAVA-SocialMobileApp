@@ -6,12 +6,29 @@
     android:padding="16dp"
     tools:context=".RegisterActivity">
 
+    <ImageView
+        android:id="@+id/back_button_register"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:src="@drawable/ic_arrow_back" />
+
+    <ImageView
+        android:id="@+id/logo_image"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:scaleType="fitEnd"
+        android:src="@drawable/logo" />
+
     <TextView
         android:id="@+id/register_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="50dp"
-        android:text="Create Account"
+        android:text="Tạo tài khoản"
         android:textSize="28sp"
         android:textStyle="bold" />
 
@@ -19,10 +36,10 @@
         android:id="@+id/userName_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/register_title"
+        android:layout_below="@id/register_title"
         android:layout_marginTop="32dp"
         android:background="@drawable/edit_text_background"
-        android:hint="Tên hiển thị"
+        android:hint="Tên hiển thị (ví dụ: Tuấn Đức)"
         android:inputType="textPersonName"
         android:padding="12dp" />
 
@@ -30,10 +47,10 @@
         android:id="@+id/userId_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/userName_input"
+        android:layout_below="@id/userName_input"
         android:layout_marginTop="16dp"
         android:background="@drawable/edit_text_background"
-        android:hint="User ID"
+        android:hint="User ID (ví dụ: tuanduc123)"
         android:inputType="text"
         android:padding="12dp" />
 
@@ -41,7 +58,7 @@
         android:id="@+id/email_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/userId_input"
+        android:layout_below="@id/userId_input"
         android:layout_marginTop="16dp"
         android:background="@drawable/edit_text_background"
         android:hint="Email"
@@ -52,10 +69,10 @@
         android:id="@+id/password_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/email_input"
+        android:layout_below="@id/email_input"
         android:layout_marginTop="16dp"
         android:background="@drawable/edit_text_background"
-        android:hint="Password"
+        android:hint="Mật khẩu"
         android:inputType="textPassword"
         android:padding="12dp" />
 
@@ -63,10 +80,10 @@
         android:id="@+id/register_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/password_input"
+        android:layout_below="@id/password_input"
         android:layout_marginTop="32dp"
         android:backgroundTint="#00C853"
-        android:text="Register"
+        android:text="Đăng ký"
         android:textColor="@android:color/white" />
 
     <TextView
@@ -76,6 +93,6 @@
         android:layout_below="@+id/register_button"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"
-        android:text="Already have an account? Login" />
+        android:text="Đã có tài khoản? Đăng nhập" />
 
 </RelativeLayout>

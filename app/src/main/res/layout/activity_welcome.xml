@@ -13,7 +13,7 @@
         android:layout_height="300dp"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="100dp"
-        android:src="@drawable/ic_launcher_background" />
+        android:src="@drawable/weconnect" />
 
     <TextView
         android:id="@+id/welcome_title"
@@ -21,8 +21,8 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/welcome_image"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="32dp"
-        android:text="LinkUp!"
+        android:layout_marginTop="50dp"
+        android:text="WeKonnect"
         android:textSize="32sp"
         android:textStyle="bold" />
 
@@ -34,8 +34,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="8dp"
         android:gravity="center"
-        android:text="Where every thought finds a home and
-every image tells a story."
+        android:text="Nơi mọi suy nghĩ tìm thấy chung một mái nhà và\nmọi hình ảnh kể một câu chuyện riêng."
         android:textSize="16sp" />
 
     <Button
@@ -45,7 +44,7 @@ every image tells a story."
         android:layout_alignParentBottom="true"
         android:layout_margin="32dp"
         android:backgroundTint="#00C853"
-        android:text="Getting Started"
+        android:text="Bắt đầu"
         android:textColor="@android:color/white" />
 
 </RelativeLayout>

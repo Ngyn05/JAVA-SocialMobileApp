@@ -1,12 +1,14 @@
 package vn.edu.ueh.socialapplication;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,7 +56,6 @@ public class UserRepository {
         db.collection("users").whereEqualTo("userId", userId).limit(1).get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        // If the result is not empty, the userId is taken.
                         listener.onResult(!task.getResult().isEmpty());
                     } else {
                         listener.onError(task.getException());
@@ -68,24 +69,37 @@ public class UserRepository {
             return;
         }
 
-        Query query = db.collection("users")
+        Query queryByUserName = db.collection("users")
                 .orderBy("userName")
                 .startAt(queryText)
                 .endAt(queryText + "\uf8ff");
 
-        query.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                List<User> userList = new ArrayList<>();
-                QuerySnapshot snapshot = task.getResult();
-                if (snapshot != null) {
-                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                        userList.add(doc.toObject(User.class));
-                    }
-                }
-                listener.onUsersSearched(userList);
-            } else {
-                listener.onError(task.getException());
+        Query queryByUserId = db.collection("users")
+                .orderBy("userId")
+                .startAt(queryText)
+                .endAt(queryText + "\uf8ff");
+
+        Task<QuerySnapshot> userNameTask = queryByUserName.get();
+        Task<QuerySnapshot> userIdTask = queryByUserId.get();
+
+        Tasks.whenAllSuccess(userNameTask, userIdTask).addOnSuccessListener(results -> {
+            // Use a LinkedHashMap to maintain order and remove duplicates based on document ID
+            Map<String, User> userMap = new LinkedHashMap<>();
+
+            // Process username results
+            QuerySnapshot userNameSnapshot = (QuerySnapshot) results.get(0);
+            for (DocumentSnapshot doc : userNameSnapshot.getDocuments()) {
+                userMap.put(doc.getId(), doc.toObject(User.class));
             }
-        });
+
+            // Process userId results
+            QuerySnapshot userIdSnapshot = (QuerySnapshot) results.get(1);
+            for (DocumentSnapshot doc : userIdSnapshot.getDocuments()) {
+                userMap.put(doc.getId(), doc.toObject(User.class));
+            }
+
+            listener.onUsersSearched(new ArrayList<>(userMap.values()));
+
+        }).addOnFailureListener(listener::onError);
     }
 }

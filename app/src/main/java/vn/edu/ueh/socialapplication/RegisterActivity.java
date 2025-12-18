@@ -6,6 +6,7 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,6 +27,7 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText userNameInput, userIdInput, emailInput, passwordInput;
     private Button registerButton;
     private TextView loginLink;
+    private ImageView backButton;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -42,6 +44,7 @@ public class RegisterActivity extends AppCompatActivity {
         passwordInput = findViewById(R.id.password_input);
         registerButton = findViewById(R.id.register_button);
         loginLink = findViewById(R.id.login_link);
+        backButton = findViewById(R.id.back_button_register);
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
@@ -49,6 +52,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         registerButton.setOnClickListener(v -> registerUser());
         loginLink.setOnClickListener(v -> startActivity(new Intent(RegisterActivity.this, LoginActivity.class)));
+        backButton.setOnClickListener(v -> finish());
     }
 
     private void registerUser() {
@@ -58,30 +62,28 @@ public class RegisterActivity extends AppCompatActivity {
         String password = passwordInput.getText().toString().trim();
 
         if (TextUtils.isEmpty(userName) || TextUtils.isEmpty(userId) || TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Vui lòng điền đầy đủ thông tin", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (password.length() < 6) {
-            Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Mật khẩu phải có ít nhất 6 ký tự", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Step 1: Check if the custom userId is already taken
         userRepository.checkUserIdExists(userId, new UserRepository.OnUserIdCheckListener() {
             @Override
             public void onResult(boolean isTaken) {
                 if (isTaken) {
-                    Toast.makeText(RegisterActivity.this, "This User ID is already taken. Please choose another one.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(RegisterActivity.this, "User ID này đã có người sử dụng. Vui lòng chọn một ID khác.", Toast.LENGTH_LONG).show();
                 } else {
-                    // Step 2: If userId is unique, proceed with creating the user
                     proceedWithRegistration(userName, userId, email, password);
                 }
             }
 
             @Override
             public void onError(Exception e) {
-                Toast.makeText(RegisterActivity.this, "Error checking User ID: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(RegisterActivity.this, "Lỗi khi kiểm tra User ID: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -101,17 +103,17 @@ public class RegisterActivity extends AppCompatActivity {
                         db.collection("users").document(authUid).set(user)
                                 .addOnCompleteListener(saveTask -> {
                                     if (saveTask.isSuccessful()) {
-                                        Toast.makeText(RegisterActivity.this, "Registration successful.", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(RegisterActivity.this, "Đăng ký thành công.", Toast.LENGTH_SHORT).show();
                                         Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
                                         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                                         startActivity(intent);
                                         finish();
                                     } else {
-                                        Toast.makeText(RegisterActivity.this, "Failed to save user data.", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(RegisterActivity.this, "Lưu dữ liệu người dùng thất bại.", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                     } else {
-                        Toast.makeText(RegisterActivity.this, "Authentication failed: " + task.getException().getMessage(),
+                        Toast.makeText(RegisterActivity.this, "Xác thực thất bại: " + task.getException().getMessage(),
                                 Toast.LENGTH_LONG).show();
                     }
                 });

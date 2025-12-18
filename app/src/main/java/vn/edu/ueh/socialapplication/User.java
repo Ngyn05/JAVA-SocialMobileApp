@@ -10,14 +10,6 @@ public class User {
     // Required empty public constructor for Firestore
     public User() {}
 
-    public User(String userId, String userName, String email, String avatar, String bio) {
-        this.userId = userId;
-        this.userName = userName;
-        this.email = email;
-        this.avatar = avatar;
-        this.bio = bio;
-    }
-
     // Getters and setters
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
