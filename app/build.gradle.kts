@@ -43,7 +43,9 @@ dependencies {
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.firebase.firestore)
-    implementation("com.google.firebase:firebase-storage:21.0.0") // Corrected dependency
+    
+    // Removed Firebase Storage, Added Cloudinary
+    implementation("com.cloudinary:cloudinary-android:2.4.0")
 
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 

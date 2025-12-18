@@ -2,33 +2,24 @@ package vn.edu.ueh.socialapplication;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class HomeActivity extends AppCompatActivity {
 
+    // The RecyclerView here is for the future main feed, not for search results anymore.
     private RecyclerView recyclerView;
-    private UserAdapter userAdapter;
-    private List<User> userList;
 
-    private ImageView profileImage;
-    private EditText searchBar;
+    private ImageView profileImage, searchIcon;
 
     private UserRepository userRepository;
 
@@ -38,15 +29,8 @@ public class HomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         profileImage = findViewById(R.id.profile_image);
-        searchBar = findViewById(R.id.search_bar);
-
+        searchIcon = findViewById(R.id.search_icon);
         recyclerView = findViewById(R.id.recycler_view);
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-        userList = new ArrayList<>();
-        userAdapter = new UserAdapter(this, userList);
-        recyclerView.setAdapter(userAdapter);
 
         userRepository = new UserRepository();
 
@@ -56,24 +40,12 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Load or refresh user data every time the activity is resumed.
-        // This ensures the avatar is updated after being changed in EditProfileActivity.
         loadCurrentUser();
     }
 
     private void setupListeners() {
-        searchBar.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                searchUsers(s.toString());
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) { }
-        });
+        // When search icon is clicked, open the dedicated SearchActivity
+        searchIcon.setOnClickListener(v -> startActivity(new Intent(HomeActivity.this, SearchActivity.class)));
 
         profileImage.setOnClickListener(this::showProfileMenu);
     }
@@ -106,22 +78,6 @@ public class HomeActivity extends AppCompatActivity {
         finish();
     }
 
-    private void searchUsers(String s) {
-        userRepository.searchUsers(s, new UserRepository.OnUsersSearchedListener() {
-            @Override
-            public void onUsersSearched(List<User> users) {
-                userList.clear();
-                userList.addAll(users);
-                userAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onError(Exception e) {
-                Toast.makeText(HomeActivity.this, "Search failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
     private void loadCurrentUser() {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser != null) {
@@ -142,7 +98,6 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void updateUI(User user) {
-        // If user has a valid avatar URL, load it. Otherwise, set the default placeholder.
         if (user != null && user.getAvatar() != null && !user.getAvatar().isEmpty()) {
             ImageUtils.loadImage(user.getAvatar(), profileImage);
         } else {

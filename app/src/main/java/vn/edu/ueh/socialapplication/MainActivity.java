@@ -7,8 +7,12 @@ import android.os.Looper;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.cloudinary.android.MediaManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,6 +21,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Initialize Cloudinary
+        try {
+            Map<String, String> config = new HashMap<>();
+            config.put("cloud_name", "dt0drhz8d");
+            config.put("api_key", "893675145317651");
+            config.put("api_secret", "ktAd44YuxTMfeXjaIOEy4tcUsnI");
+            MediaManager.init(this, config);
+        } catch (Exception e) {
+            // Already initialized
+        }
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
