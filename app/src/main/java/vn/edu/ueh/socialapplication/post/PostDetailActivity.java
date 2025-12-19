@@ -23,6 +23,7 @@ public class PostDetailActivity extends AppCompatActivity {
     private CommentAdapter commentAdapter;
     private PostDetailViewModel viewModel; // << THÊM VIEWMODEL
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,9 +39,12 @@ public class PostDetailActivity extends AppCompatActivity {
 
         // 2. Ánh xạ View
         ImageView btnBack = findViewById(R.id.btnBack);
-        TextView tvUser = findViewById(R.id.tvDetailUserName);
-        TextView tvContent = findViewById(R.id.tvDetailContent);
-        ImageView imgPost = findViewById(R.id.imgDetailPost);
+
+        View postCardView = findViewById(R.id.postCard);
+        TextView tvUser = postCardView.findViewById(R.id.tvUsername);
+        TextView tvContent = findViewById(R.id.tvCaption);
+        ImageView imgPost = findViewById(R.id.imgPost);
+        ImageView btnLike = postCardView.findViewById(R.id.btnLike);
         RecyclerView rvComments = findViewById(R.id.rvDetailComments);
         EditText edtInput = findViewById(R.id.edtDetailCommentInput);
         ImageView btnSend = findViewById(R.id.btnDetailSend);
@@ -57,6 +61,19 @@ public class PostDetailActivity extends AppCompatActivity {
                 Glide.with(this).load(currentPost.getImage()).into(imgPost);
             }
 
+            // Cập nhật trạng thái Like ban đầu (Đổi màu trái tim)
+            updateLikeUI(btnLike, tvLikeCount, currentPost);
+
+            // Xử lý sự kiện click Like
+            btnLike.setOnClickListener(v -> {
+                // 1. Cập nhật local UI ngay lập tức
+                toggleLocalLike(btnLike, tvLikeCount, currentPost);
+
+                // 2. Gọi ViewModel để cập nhật lên Firestore
+                // Giả sử ViewModel của bạn đã có hàm toggleLike tương tự Adapter
+                viewModel.toggleLike(currentPost.getPostId());
+            });
+
             if (tvLikeCount != null) {
                 tvLikeCount.setText(String.valueOf(currentPost.getLikesCount()));
             }
@@ -69,36 +86,32 @@ public class PostDetailActivity extends AppCompatActivity {
             // 4. Setup danh sách Comment
             rvComments.setLayoutManager(new LinearLayoutManager(this));
             // Khởi tạo Adapter với danh sách rỗng trước
-            commentAdapter = new CommentAdapter(new ArrayList<>());
+            commentAdapter = new CommentAdapter();
             rvComments.setAdapter(commentAdapter);
 
-            // << THAY ĐỔI: Lắng nghe dữ liệu bình luận từ ViewModel >>
+            viewModel.listenForComments(currentPost.getPostId());
             viewModel.getCommentsData().observe(this, comments -> {
-                if (comments != null) {
-                    commentAdapter.setCommentList(comments); // Cập nhật adapter
-                }
+                commentAdapter.setComments(comments);
             });
 
-            // Tải danh sách bình luận lần đầu
-            viewModel.loadComments(currentPost.getPostId());
-
-            // 5. Xử lý nút Gửi Comment
             btnSend.setOnClickListener(v -> {
                 String content = edtInput.getText().toString().trim();
                 if (!content.isEmpty()) {
-                    btnSend.setEnabled(false); // Vô hiệu hóa nút gửi để tránh spam
-                    viewModel.postComment(currentPost.getPostId(), content);
+                    // Gọi hàm gửi
+                    viewModel.sendComment(currentPost.getPostId(), content);
+
+                    // ẨN BÀN PHÍM SAU KHI BẤM GỬI
+                    hideKeyboard();
                 }
             });
 
-            // << THÊM: Lắng nghe kết quả gửi comment >>
-            viewModel.getCommentPostStatus().observe(this, success -> {
-                btnSend.setEnabled(true); // Bật lại nút gửi
-                if (success) {
-                    edtInput.setText(""); // Xóa ô nhập liệu khi thành công
-                    rvComments.scrollToPosition(commentAdapter.getItemCount() - 1); // Cuộn xuống bình luận mới nhất
-                } else {
-                    Toast.makeText(this, "Gửi bình luận thất bại!", Toast.LENGTH_SHORT).show();
+
+            viewModel.getCommentPostStatus().observe(this, isSuccess -> {
+                if (isSuccess != null && isSuccess) {
+                    edtInput.setText("");
+                    Toast.makeText(this, "Đã gửi bình luận", Toast.LENGTH_SHORT).show();
+                } else if (isSuccess != null && !isSuccess) {
+                    Toast.makeText(this, "Gửi bình luận thất bại", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -107,6 +120,43 @@ public class PostDetailActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
 
+    }
+
+    private void updateLikeUI(ImageView btnLike, TextView tvLikeCount, Post post) {
+        String currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
+        if (currentUserId != null && post.getLikes() != null && post.getLikes().contains(currentUserId)) {
+            // TRƯỜNG HỢP ĐÃ LIKE
+            btnLike.setImageResource(R.drawable.ic_liked); // Dùng icon trái tim đầy
+        } else {
+            // TRƯỜNG HỢP CHƯA LIKE
+            btnLike.setImageResource(R.drawable.ic_unliked); // Dùng icon trái tim trống
+        }
+        tvLikeCount.setText(String.valueOf(post.getLikesCount()));
+    }
+
+    // Hàm xử lý click nhanh (Optimistic Update)
+    private void toggleLocalLike(ImageView btnLike, TextView tvLikeCount, Post post) {
+        String uid = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
+        List<String> likes = post.getLikes();
+
+        if (likes.contains(uid)) {
+            likes.remove(uid);
+        } else {
+            likes.add(uid);
+        }
+
+        post.setLikes(likes);
+        updateLikeUI(btnLike, tvLikeCount, post);
+    }
+
+    private void hideKeyboard() {
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        }
     }
 
 }

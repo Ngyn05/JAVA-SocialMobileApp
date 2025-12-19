@@ -12,6 +12,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import vn.edu.ueh.socialapplication.data.model.User;
+
 public class UserRepository {
 
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();

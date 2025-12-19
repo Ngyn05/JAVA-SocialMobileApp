@@ -4,18 +4,22 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
 import java.util.List;
+
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.Comment;
 
 public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentViewHolder> {
+    private List<Comment> commentList = new ArrayList<>();
 
-    private List<Comment> commentList;
-
-    public CommentAdapter(List<Comment> commentList) {
-        this.commentList = commentList;
+    public void setComments(List<Comment> comments) {
+        this.commentList = comments;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -33,9 +37,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
     }
 
     @Override
-    public int getItemCount() {
-        return commentList.size();
-    }
+    public int getItemCount() { return commentList.size(); }
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
         TextView tvUser, tvContent;
@@ -45,11 +47,4 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
             tvContent = itemView.findViewById(R.id.tvCommentContent);
         }
     }
-
-    // Trong CommentAdapter.java
-    public void setCommentList(List<Comment> newCommentList) {
-        this.commentList = newCommentList;
-        notifyDataSetChanged(); // Cập nhật lại toàn bộ RecyclerView
-    }
-
 }

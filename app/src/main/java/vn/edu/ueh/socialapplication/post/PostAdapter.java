@@ -1,5 +1,6 @@
 package vn.edu.ueh.socialapplication.post;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,12 +9,19 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.auth.FirebaseAuth;
+
+import java.util.ArrayList;
 import java.util.List;
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.Post;
 
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
-
+    private String currentUserId = FirebaseAuth.getInstance().getUid();
     private List<Post> postList;
     private final OnPostClickListener listener;
 
@@ -32,10 +40,29 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull PostViewHolder holder, int position) {
-        // Lấy bài đăng tại vị trí hiện tại
         Post post = postList.get(position);
-        // Gọi hàm bind để gán dữ liệu
         holder.bind(post, listener);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull PostViewHolder holder, int position, @NonNull List<Object> payloads) {
+        if (!payloads.isEmpty()) {
+            Post post = postList.get(position);
+            for (Object payload : payloads) {
+                if (payload.equals("LIKE_UPDATE")) {
+                    // CHỈ cập nhật UI Like
+                    if (post.getLikes().contains(currentUserId)) {
+                        holder.btnLike.setImageResource(R.drawable.ic_liked);
+                    } else {
+                        holder.btnLike.setImageResource(R.drawable.ic_unliked);
+                    }
+                    holder.tvLikeCount.setText(String.valueOf(post.getLikesCount()));
+                }
+            }
+        } else {
+            // Nếu không có payload, gọi lại hàm onBindViewHolder cơ bản ở trên
+            super.onBindViewHolder(holder, position, payloads);
+        }
     }
 
     @Override
@@ -57,6 +84,39 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         void onCommentClick(Post post);
     }
 
+    public void toggleLike(int position) {
+        if (currentUserId == null) return;
+
+        Post post = postList.get(position);
+        String postId = post.getPostId();
+
+        // Kiểm tra postId trước khi gọi Firestore
+        if (postId == null) {
+            Log.e("PostAdapter", "PostId is null at position: " + position);
+            return;
+        }
+
+        List<String> likes = post.getLikes();
+        if (likes == null) likes = new ArrayList<>();
+
+        if (likes.contains(currentUserId)) {
+            likes.remove(currentUserId);
+        } else {
+            likes.add(currentUserId);
+        }
+        post.setLikes(likes);
+        notifyItemChanged(position, "LIKE_UPDATE");
+
+        // Cập nhật Database
+        DocumentReference postRef = FirebaseFirestore.getInstance().collection("posts").document(postId);
+        if (likes.contains(currentUserId)) {
+            postRef.update("likes", FieldValue.arrayUnion(currentUserId));
+        } else {
+            postRef.update("likes", FieldValue.arrayRemove(currentUserId));
+        }
+    }
+
+
     /**
      * Chuyển ViewHolder thành non-static để dễ dàng truy cập.
      * Logic bắt sự kiện click được chuyển vào hàm bind().
@@ -64,7 +124,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     public class PostViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvContent, tvLikeCount, tvCommentCount;
         ImageView imgPost;
-        ImageView imgBtnComment;
+        ImageView btnComment, btnLike;
         ImageView imgAvatar; // Thêm ImageView cho avatar
 
         public PostViewHolder(@NonNull View itemView) {
@@ -74,7 +134,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             tvLikeCount = itemView.findViewById(R.id.tvLikeCount);
             tvCommentCount = itemView.findViewById(R.id.tvCommentCount);
             imgPost = itemView.findViewById(R.id.imgPost);
-            imgBtnComment = itemView.findViewById(R.id.btnComment);
+            btnComment = itemView.findViewById(R.id.btnComment);
+            btnLike = itemView.findViewById(R.id.btnLike);
             imgAvatar = itemView.findViewById(R.id.imgAvatar); // Ánh xạ avatar từ layout
         }
 
@@ -91,6 +152,14 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                         .into(imgPost);
             } else {
                 imgPost.setVisibility(View.GONE); // Ẩn ImageView nếu không có ảnh
+            }
+
+            if (currentUserId != null && post.getLikes() != null && post.getLikes().contains(currentUserId)) {
+                // TRƯỜNG HỢP ĐÃ LIKE
+                btnLike.setImageResource(R.drawable.ic_liked); // Dùng icon trái tim đầy
+            } else {
+                // TRƯỜNG HỢP CHƯA LIKE
+                btnLike.setImageResource(R.drawable.ic_unliked); // Dùng icon trái tim trống
             }
 
             if (tvLikeCount != null) {
@@ -115,9 +184,16 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 //            }
 
             // Bắt sự kiện click cho nút comment
-            imgBtnComment.setOnClickListener(v -> {
+            btnComment.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onCommentClick(post);
+                }
+            });
+            btnLike.setOnClickListener(v -> {
+                // Truyền position vào hàm toggleLike
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION) {
+                    toggleLike(position);
                 }
             });
         }

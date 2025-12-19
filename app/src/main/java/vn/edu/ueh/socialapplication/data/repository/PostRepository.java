@@ -11,11 +11,14 @@ import com.cloudinary.android.callback.UploadCallback;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import vn.edu.ueh.socialapplication.data.model.Post;
@@ -29,6 +32,32 @@ public class PostRepository {
     public interface PostCreationCallback {
         void onSuccess();
         void onError(String errorMessage);
+    }
+
+    public interface OnPostsChangeCallback {
+        void onPostsChanged(List<Post> posts);
+    }
+
+    public void getAllPostsRealtime(OnPostsChangeCallback callback) {
+        postsCollection
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Log.e(TAG, "Listen failed.", error);
+                        return;
+                    }
+
+                    List<Post> postList = new ArrayList<>();
+                    for (DocumentSnapshot doc : value) {
+                        Post post = doc.toObject(Post.class);
+                        if (post != null) {
+                            // GÁN ID NGAY TẠI ĐÂY
+                            post.setPostId(doc.getId());
+                            postList.add(post);
+                        }
+                    }
+                    callback.onPostsChanged(postList);
+                });
     }
 
     public PostRepository() {

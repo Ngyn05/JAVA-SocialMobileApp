@@ -22,6 +22,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
 
+import vn.edu.ueh.socialapplication.home.HomeActivity;
+
 public class RegisterActivity extends AppCompatActivity {
 
     private EditText userNameInput, userIdInput, emailInput, passwordInput;

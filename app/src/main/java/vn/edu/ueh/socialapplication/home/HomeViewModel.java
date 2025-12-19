@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 // Import duy nhất model Post và repository của nó
@@ -31,14 +32,21 @@ public class HomeViewModel extends ViewModel {
      */
     public void loadFeed() {
         postRepository.getAllPosts().addOnSuccessListener(queryDocumentSnapshots -> {
-            // Chuyển đổi kết quả truy vấn trực tiếp thành danh sách đối tượng Post.
-            // Mỗi đối tượng `Post` ở đây đã chứa đầy đủ thông tin `userName`.
-            List<Post> posts = queryDocumentSnapshots.toObjects(Post.class);
+            List<Post> posts = new ArrayList<>();
+
+            // Thay vì dùng toObjects trực tiếp, ta duyệt qua từng document
+            for (com.google.firebase.firestore.DocumentSnapshot document : queryDocumentSnapshots) {
+                Post post = document.toObject(Post.class);
+                if (post != null) {
+                    // QUAN TRỌNG: Gán Document ID vào trường postId của model Post
+                    post.setPostId(document.getId());
+                    posts.add(post);
+                }
+            }
+
             postsData.setValue(posts);
         }).addOnFailureListener(e -> {
-            // Có thể tạo một LiveData khác để thông báo lỗi cho UI
-            // Ví dụ: errorData.setValue(e.getMessage());
-            postsData.setValue(null); // Hoặc set giá trị null để UI biết là có lỗi
+            postsData.setValue(null);
         });
     }
 }

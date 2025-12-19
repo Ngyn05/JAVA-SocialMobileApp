@@ -97,7 +97,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_unliked"
-                app:tint="@android:color/darker_gray" />
+                app:tint="@android:color/holo_red_light" />
 
             <TextView
                 android:id="@+id/tvLikeCount"
