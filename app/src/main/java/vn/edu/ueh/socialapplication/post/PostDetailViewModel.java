@@ -6,6 +6,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import java.util.Date;
 import java.util.List;
 import vn.edu.ueh.socialapplication.data.model.Comment;
 import vn.edu.ueh.socialapplication.data.repository.CommentRepository;
@@ -47,11 +49,8 @@ public class PostDetailViewModel extends ViewModel {
         String userName = currentUser.getDisplayName();
 
         // Tạo đối tượng Comment với đầy đủ thông tin
-        Comment newComment = new Comment(); // Giả sử bạn có constructor phù hợp
-        newComment.setUserId(userId);
-        newComment.setUserName(userName);
-        newComment.setContent(content);
-        newComment.setCreatedAt(com.google.firebase.Timestamp.now());
+        Comment newComment = new Comment(userId, userName, content, new Date()); // Giả sử bạn có constructor phù hợp
+
 
         commentRepository.addComment(postId, newComment).addOnSuccessListener(aVoid -> {
             commentPostStatus.setValue(true);

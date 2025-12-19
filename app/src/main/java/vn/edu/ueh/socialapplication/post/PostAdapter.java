@@ -62,7 +62,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
      * Logic bắt sự kiện click được chuyển vào hàm bind().
      */
     public class PostViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvContent;
+        TextView tvName, tvContent, tvLikeCount, tvCommentCount;
         ImageView imgPost;
         ImageView imgBtnComment;
         ImageView imgAvatar; // Thêm ImageView cho avatar
@@ -71,6 +71,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             super(itemView);
             tvName = itemView.findViewById(R.id.tvUsername);
             tvContent = itemView.findViewById(R.id.tvCaption);
+            tvLikeCount = itemView.findViewById(R.id.tvLikeCount);
+            tvCommentCount = itemView.findViewById(R.id.tvCommentCount);
             imgPost = itemView.findViewById(R.id.imgPost);
             imgBtnComment = itemView.findViewById(R.id.btnComment);
             imgAvatar = itemView.findViewById(R.id.imgAvatar); // Ánh xạ avatar từ layout
@@ -89,6 +91,14 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                         .into(imgPost);
             } else {
                 imgPost.setVisibility(View.GONE); // Ẩn ImageView nếu không có ảnh
+            }
+
+            if (tvLikeCount != null) {
+                tvLikeCount.setText(String.valueOf(post.getLikesCount()));
+            }
+
+            if (tvCommentCount != null) {
+                tvCommentCount.setText(String.valueOf(post.getComments()));
             }
 
 //            // Load ảnh đại diện (avatar)

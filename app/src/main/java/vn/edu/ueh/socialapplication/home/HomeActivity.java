@@ -70,13 +70,14 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     }
 
     @Override
-    public void onCommentClick(Post post) {
-        // Chuyển sang Activity chi tiết bài đăng
+    public void onCommentClick(Post post) {    // Kiểm tra nếu postId bị null thì báo lỗi, không chuyển trang để tránh crash
+        if (post.getPostId() == null || post.getPostId().isEmpty()) {
+            Toast.makeText(this, "Lỗi: Bài viết chưa có ID!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Intent intent = new Intent(HomeActivity.this, PostDetailActivity.class);
-
-        // Đóng gói đối tượng Post và gửi đi
         intent.putExtra("post_object", post);
-
         startActivity(intent);
     }
 }

@@ -44,6 +44,8 @@ public class PostDetailActivity extends AppCompatActivity {
         RecyclerView rvComments = findViewById(R.id.rvDetailComments);
         EditText edtInput = findViewById(R.id.edtDetailCommentInput);
         ImageView btnSend = findViewById(R.id.btnDetailSend);
+        TextView tvLikeCount = findViewById(R.id.tvLikeCount);
+        TextView tvCommentCount = findViewById(R.id.tvCommentCount);
 
         // 3. Hiển thị dữ liệu bài viết
         if (currentPost != null) {
@@ -53,6 +55,15 @@ public class PostDetailActivity extends AppCompatActivity {
             if (currentPost.getImage() != null && !currentPost.getImage().isEmpty()) {
                 imgPost.setVisibility(View.VISIBLE);
                 Glide.with(this).load(currentPost.getImage()).into(imgPost);
+            }
+
+            if (tvLikeCount != null) {
+                tvLikeCount.setText(String.valueOf(currentPost.getLikesCount()));
+            }
+
+            // 4. LOAD COMMENT COUNT (Lấy từ field int comments)
+            if (tvCommentCount != null) {
+                tvCommentCount.setText(String.valueOf(currentPost.getComments()));
             }
 
             // 4. Setup danh sách Comment
@@ -94,5 +105,8 @@ public class PostDetailActivity extends AppCompatActivity {
 
         // 6. Xử lý nút Back
         btnBack.setOnClickListener(v -> finish());
+
+
     }
+
 }

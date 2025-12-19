@@ -15,6 +15,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.Date;
 import java.util.Map;
 
 import vn.edu.ueh.socialapplication.data.model.Post;
@@ -103,7 +104,7 @@ public class PostRepository {
                 userName,
                 content,
                 imageUrl, // Có thể là null nếu bài đăng không có ảnh
-                com.google.firebase.Timestamp.now() // Sử dụng Timestamp của Firebase
+                new Date() // Sử dụng Timestamp của Firebase
         );
 
         postsCollection.add(newPost)
