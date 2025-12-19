@@ -44,6 +44,9 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.firebase.firestore)
     
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+
     // Removed Firebase Storage, Added Cloudinary
     implementation("com.cloudinary:cloudinary-android:2.4.0")
 

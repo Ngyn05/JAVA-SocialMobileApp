@@ -1,3 +1,6 @@
+// This class is deprecated and moved to vn.edu.ueh.socialapplication.data.model.User
+// keeping file to avoid "file not found" issues if referenced elsewhere before full cleanup, but commenting out content to avoid compilation conflicts.
+/*
 package vn.edu.ueh.socialapplication;
 
 public class User {
@@ -26,3 +29,4 @@ public class User {
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
 }
+*/

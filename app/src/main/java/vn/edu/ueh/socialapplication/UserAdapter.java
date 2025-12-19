@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import vn.edu.ueh.socialapplication.data.model.User;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 

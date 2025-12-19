@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import vn.edu.ueh.socialapplication.data.model.User;
 
 public class EditProfileActivity extends AppCompatActivity {
 

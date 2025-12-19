@@ -25,6 +25,8 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.ArrayList;
 import java.util.List;
 
+import vn.edu.ueh.socialapplication.data.model.User;
+
 public class HomeActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
