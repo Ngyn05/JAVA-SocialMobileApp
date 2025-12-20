@@ -32,7 +32,7 @@ public class ProfilePostAdapter extends RecyclerView.Adapter<ProfilePostAdapter.
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_post_grid, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_post, parent, false);
         return new ViewHolder(view);
     }
 
@@ -73,7 +73,7 @@ public class ProfilePostAdapter extends RecyclerView.Adapter<ProfilePostAdapter.
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            imgPost = itemView.findViewById(R.id.imgPostGrid);
+            imgPost = itemView.findViewById(R.id.imgPost);
         }
     }
 }

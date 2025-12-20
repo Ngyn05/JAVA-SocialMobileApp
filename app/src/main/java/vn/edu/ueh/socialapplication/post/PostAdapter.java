@@ -7,10 +7,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.auth.FirebaseAuth;
@@ -25,7 +25,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     private List<Post> postList;
     private final OnPostClickListener listener;
 
-    // Sửa lại Constructor: Chỉ cần nhận listener. Dữ liệu sẽ được cập nhật qua một phương thức riêng.
     public PostAdapter(List<Post> postList, OnPostClickListener listener) {
         this.postList = postList;
         this.listener = listener;
@@ -35,7 +34,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     @Override
     public PostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_post, parent, false);
-        return new PostViewHolder(view); // Không cần truyền listener và list vào đây nữa
+        return new PostViewHolder(view);
     }
 
     @Override
@@ -50,7 +49,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             Post post = postList.get(position);
             for (Object payload : payloads) {
                 if (payload.equals("LIKE_UPDATE")) {
-                    // CHỈ cập nhật UI Like
                     if (post.getLikes().contains(currentUserId)) {
                         holder.btnLike.setImageResource(R.drawable.ic_liked);
                     } else {
@@ -60,7 +58,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 }
             }
         } else {
-            // Nếu không có payload, gọi lại hàm onBindViewHolder cơ bản ở trên
             super.onBindViewHolder(holder, position, payloads);
         }
     }
@@ -70,31 +67,20 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         return postList.size();
     }
 
-    /**
-     * Thêm phương thức này để cập nhật danh sách bài đăng từ Activity/Fragment.
-     * Đây là một cách làm rất phổ biến và linh hoạt.
-     */
     public void setPosts(List<Post> newPostList) {
         this.postList = newPostList;
-        notifyDataSetChanged(); // Thông báo cho Adapter rằng dữ liệu đã thay đổi để vẽ lại UI
+        notifyDataSetChanged();
     }
 
-    // Định nghĩa interface cho sự kiện click
     public interface OnPostClickListener {
         void onCommentClick(Post post);
     }
 
     public void toggleLike(int position) {
         if (currentUserId == null) return;
-
         Post post = postList.get(position);
         String postId = post.getPostId();
-
-        // Kiểm tra postId trước khi gọi Firestore
-        if (postId == null) {
-            Log.e("PostAdapter", "PostId is null at position: " + position);
-            return;
-        }
+        if (postId == null) return;
 
         List<String> likes = post.getLikes();
         if (likes == null) likes = new ArrayList<>();
@@ -107,7 +93,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         post.setLikes(likes);
         notifyItemChanged(position, "LIKE_UPDATE");
 
-        // Cập nhật Database
         DocumentReference postRef = FirebaseFirestore.getInstance().collection("posts").document(postId);
         if (likes.contains(currentUserId)) {
             postRef.update("likes", FieldValue.arrayUnion(currentUserId));
@@ -116,16 +101,12 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         }
     }
 
-
-    /**
-     * Chuyển ViewHolder thành non-static để dễ dàng truy cập.
-     * Logic bắt sự kiện click được chuyển vào hàm bind().
-     */
     public class PostViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvContent, tvDate, tvLikeCount, tvCommentCount;
         ImageView imgPost;
+        CardView cardImage;
         ImageView btnComment, btnLike;
-        ImageView imgAvatar; // Thêm ImageView cho avatar
+        ImageView imgAvatar;
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -135,12 +116,12 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             tvLikeCount = itemView.findViewById(R.id.tvLikeCount);
             tvCommentCount = itemView.findViewById(R.id.tvCommentCount);
             imgPost = itemView.findViewById(R.id.imgPost);
+            cardImage = itemView.findViewById(R.id.cardImage);
             btnComment = itemView.findViewById(R.id.btnComment);
             btnLike = itemView.findViewById(R.id.btnLike);
-            imgAvatar = itemView.findViewById(R.id.imgAvatar); // Ánh xạ avatar từ layout
+            imgAvatar = itemView.findViewById(R.id.imgAvatar);
         }
 
-        // Tạo hàm bind để gán dữ liệu và bắt sự kiện
         public void bind(final Post post, final OnPostClickListener listener) {
             tvName.setText(post.getUserName());
             tvContent.setText(post.getContent());
@@ -148,57 +129,30 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             String dateStr = sdf.format(post.getCreatedAt());
             tvDate.setText(dateStr);
 
-            // Load ảnh bài đăng
             if (post.getImage() != null && !post.getImage().isEmpty()) {
-                imgPost.setVisibility(View.VISIBLE);
+                cardImage.setVisibility(View.VISIBLE);
                 Glide.with(itemView.getContext())
                         .load(post.getImage())
                         .into(imgPost);
             } else {
-                imgPost.setVisibility(View.GONE); // Ẩn ImageView nếu không có ảnh
+                cardImage.setVisibility(View.GONE);
             }
 
             if (currentUserId != null && post.getLikes() != null && post.getLikes().contains(currentUserId)) {
-                // TRƯỜNG HỢP ĐÃ LIKE
-                btnLike.setImageResource(R.drawable.ic_liked); // Dùng icon trái tim đầy
+                btnLike.setImageResource(R.drawable.ic_liked);
             } else {
-                // TRƯỜNG HỢP CHƯA LIKE
-                btnLike.setImageResource(R.drawable.ic_unliked); // Dùng icon trái tim trống
+                btnLike.setImageResource(R.drawable.ic_unliked);
             }
 
-            if (tvLikeCount != null) {
-                tvLikeCount.setText(String.valueOf(post.getLikesCount()));
-            }
+            tvLikeCount.setText(String.valueOf(post.getLikesCount()));
+            tvCommentCount.setText(String.valueOf(post.getComments()));
 
-            if (tvCommentCount != null) {
-                tvCommentCount.setText(String.valueOf(post.getComments()));
-            }
-
-//            // Load ảnh đại diện (avatar)
-//            // Giả sử model Post của bạn có trường `authorAvatarUrl`
-//            if (post.getAvatarUrl() != null && !post.getAvatarUrl().isEmpty()) {
-//                Glide.with(itemView.getContext())
-//                        .load(post.getAvatarUrl())
-//                        .placeholder(R.drawable.ic_default_avatar) // Ảnh chờ trong lúc tải
-//                        .error(R.drawable.ic_default_avatar) // Ảnh hiển thị khi lỗi
-//                        .into(imgAvatar);
-//            } else {
-//                // Nếu không có avatar, hiển thị ảnh mặc định
-//                imgAvatar.setImageResource(R.drawable.ic_default_avatar);
-//            }
-
-            // Bắt sự kiện click cho nút comment
             btnComment.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onCommentClick(post);
-                }
+                if (listener != null) listener.onCommentClick(post);
             });
             btnLike.setOnClickListener(v -> {
-                // Truyền position vào hàm toggleLike
                 int position = getAdapterPosition();
-                if (position != RecyclerView.NO_POSITION) {
-                    toggleLike(position);
-                }
+                if (position != RecyclerView.NO_POSITION) toggleLike(position);
             });
         }
     }
