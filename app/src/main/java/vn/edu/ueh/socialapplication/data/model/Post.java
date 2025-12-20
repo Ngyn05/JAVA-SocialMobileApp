@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Exclude;
 
 import java.io.Serializable;
@@ -12,8 +11,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@Entity
 public class Post implements Serializable {
-    private String postId;
+    @PrimaryKey
+    @NonNull
+    private String postId = "";
     private String userId;
     private String userName;
     private String content;
@@ -34,8 +36,9 @@ public class Post implements Serializable {
         this.comments = 0;
     }
 
+    @NonNull
     public String getPostId() { return postId; }
-    public void setPostId(String postId) { this.postId = postId; }
+    public void setPostId(@NonNull String postId) { this.postId = postId; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
@@ -49,12 +52,12 @@ public class Post implements Serializable {
     public String getImage() { return image; }
     public void setImage(String image) { this.image = image; }
 
-
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 
     public List<String> getLikes() { return likes; }
     public void setLikes(List<String> likes) { this.likes = likes; }
+    
     @Exclude
     public int getLikesCount() {
         return likes != null ? likes.size() : 0;
@@ -62,5 +65,4 @@ public class Post implements Serializable {
 
     public int getComments() { return comments; }
     public void setComments(int comments) { this.comments = comments; }
-
 }
