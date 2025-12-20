@@ -1,6 +1,7 @@
 package vn.edu.ueh.socialapplication.home;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -14,7 +15,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
-import vn.edu.ueh.socialapplication.UserRepository;
+import vn.edu.ueh.socialapplication.data.repository.UserRepository;
 import vn.edu.ueh.socialapplication.data.model.Post;
 import vn.edu.ueh.socialapplication.data.model.User;
 import vn.edu.ueh.socialapplication.data.repository.PostRepository;
@@ -29,7 +30,8 @@ public class HomeViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean> isLastPage = new MutableLiveData<>(false);
 
     private DocumentSnapshot lastVisiblePost = null;
-    private final int PAGE_SIZE = 5;
+    private final int PAGE_SIZE = 10;
+    private boolean isGlobalFeed = false; // Cờ đánh dấu đang xem feed chung hay feed following
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
@@ -41,26 +43,20 @@ public class HomeViewModel extends AndroidViewModel {
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<Boolean> getIsLastPage() { return isLastPage; }
 
-    /**
-     * Tải feed mới từ đầu (Refresh).
-     */
     public void refreshFeed() {
         lastVisiblePost = null;
         isLastPage.setValue(false);
-        loadFollowingFeed(true);
+        loadFeed(true);
     }
 
-    /**
-     * Tải trang tiếp theo.
-     */
     public void loadMore() {
         if (Boolean.TRUE.equals(isLoading.getValue()) || Boolean.TRUE.equals(isLastPage.getValue())) {
             return;
         }
-        loadFollowingFeed(false);
+        loadFeed(false);
     }
 
-    private void loadFollowingFeed(boolean isRefresh) {
+    private void loadFeed(boolean isRefresh) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             loadOfflineData();
@@ -73,63 +69,85 @@ public class HomeViewModel extends AndroidViewModel {
             @Override
             public void onUserLoaded(User user) {
                 List<String> following = user.getFollowing();
+                
+                // Nếu không follow ai, chuyển sang load Global Feed (tất cả bài viết)
                 if (following == null || following.isEmpty()) {
-                    postsData.setValue(new ArrayList<>());
-                    isLoading.setValue(false);
-                    isLastPage.setValue(true);
-                    return;
+                    isGlobalFeed = true;
+                    loadAllPosts(isRefresh);
+                } else {
+                    isGlobalFeed = false;
+                    loadFollowingPosts(following, isRefresh);
                 }
-
-                List<String> queryIds = following.size() > 30 ? following.subList(0, 30) : following;
-
-                postRepository.getPostsByUserIdsPaginated(queryIds, lastVisiblePost, PAGE_SIZE)
-                        .addOnSuccessListener(queryDocumentSnapshots -> {
-                            List<Post> newPosts = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                                Post post = doc.toObject(Post.class);
-                                if (post != null) {
-                                    post.setPostId(doc.getId());
-                                    newPosts.add(post);
-                                }
-                            }
-
-                            if (!queryDocumentSnapshots.isEmpty()) {
-                                lastVisiblePost = queryDocumentSnapshots.getDocuments()
-                                        .get(queryDocumentSnapshots.size() - 1);
-                            }
-
-                            if (queryDocumentSnapshots.size() < PAGE_SIZE) {
-                                isLastPage.setValue(true);
-                            }
-
-                            List<Post> currentList = isRefresh ? new ArrayList<>() : postsData.getValue();
-                            if (currentList == null) currentList = new ArrayList<>();
-                            currentList.addAll(newPosts);
-                            postsData.setValue(currentList);
-
-                            // Lưu vào SQLite để xem offline (chỉ lưu trang đầu tiên để tránh tràn bộ nhớ hoặc lưu toàn bộ tùy ý)
-                            postRepository.savePostsToLocal(currentList, isRefresh);
-
-                            isLoading.setValue(false);
-                        })
-                        .addOnFailureListener(e -> {
-                            isLoading.setValue(false);
-                            if (isRefresh) loadOfflineData();
-                        });
             }
 
             @Override
             public void onError(Exception e) {
-                isLoading.setValue(false);
-                if (isRefresh) loadOfflineData();
+                Log.e("HomeViewModel", "User not found, loading global feed", e);
+                loadAllPosts(isRefresh);
             }
         });
+    }
+
+    private void loadFollowingPosts(List<String> following, boolean isRefresh) {
+        List<String> queryIds = following.size() > 30 ? following.subList(0, 30) : following;
+
+        postRepository.getPostsByUserIdsPaginated(queryIds, lastVisiblePost, PAGE_SIZE)
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    handleQuerySuccess(queryDocumentSnapshots, isRefresh);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("HomeViewModel", "Query Following failed. Check if Index is required: " + e.getMessage());
+                    isLoading.setValue(false);
+                    if (isRefresh) loadOfflineData();
+                });
+    }
+
+    private void loadAllPosts(boolean isRefresh) {
+        // Sử dụng getAllPosts nhưng có phân trang
+        postRepository.getPostsByUserIdsPaginated(null, lastVisiblePost, PAGE_SIZE)
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    handleQuerySuccess(queryDocumentSnapshots, isRefresh);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("HomeViewModel", "Query Global Feed failed: " + e.getMessage());
+                    isLoading.setValue(false);
+                    if (isRefresh) loadOfflineData();
+                });
+    }
+
+    private void handleQuerySuccess(com.google.firebase.firestore.QuerySnapshot queryDocumentSnapshots, boolean isRefresh) {
+        List<Post> newPosts = new ArrayList<>();
+        for (DocumentSnapshot doc : queryDocumentSnapshots) {
+            Post post = doc.toObject(Post.class);
+            if (post != null) {
+                post.setPostId(doc.getId());
+                newPosts.add(post);
+            }
+        }
+
+        if (!queryDocumentSnapshots.isEmpty()) {
+            lastVisiblePost = queryDocumentSnapshots.getDocuments()
+                    .get(queryDocumentSnapshots.size() - 1);
+        }
+
+        if (queryDocumentSnapshots.size() < PAGE_SIZE) {
+            isLastPage.setValue(true);
+        }
+
+        List<Post> currentList = isRefresh ? new ArrayList<>() : postsData.getValue();
+        if (currentList == null) currentList = new ArrayList<>();
+        currentList.addAll(newPosts);
+        postsData.setValue(currentList);
+
+        postRepository.savePostsToLocal(currentList, isRefresh);
+        isLoading.setValue(false);
     }
 
     private void loadOfflineData() {
         postRepository.getLocalPosts(posts -> {
             postsData.postValue(posts);
-            isLastPage.postValue(true); // Không load more được ở offline mode
+            isLastPage.postValue(true);
+            isLoading.postValue(false);
         });
     }
 }

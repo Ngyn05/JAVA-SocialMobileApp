@@ -24,13 +24,14 @@
             </intent-filter>
         </activity>
         <activity android:name=".WelcomeActivity" />
-        <activity android:name=".LoginActivity" />
-        <activity android:name=".RegisterActivity" />
-        <activity android:name=".HomeActivity" />
-        <activity android:name=".ForgotPasswordActivity" />
-        <activity android:name=".ProfileActivity" />
-        <activity android:name=".EditProfileActivity" />
-        <activity android:name=".EmailVerificationActivity" />
+        <activity android:name=".auth.LoginActivity" />
+        <activity android:name=".auth.RegisterActivity" />
+        <activity android:name=".home.HomeActivity" />
+        <activity android:name=".auth.ForgotPasswordActivity" />
+        <activity android:name=".profile.ProfileActivity" />
+        <activity android:name=".profile.EditProfileActivity" />
+        <activity android:name=".auth.EmailVerificationActivity" />
+        <activity android:name=".post.PostDetailActivity" />
     </application>
 
 </manifest>

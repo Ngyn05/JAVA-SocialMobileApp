@@ -57,7 +57,7 @@ public class Post implements Serializable {
 
     public List<String> getLikes() { return likes; }
     public void setLikes(List<String> likes) { this.likes = likes; }
-    
+
     @Exclude
     public int getLikesCount() {
         return likes != null ? likes.size() : 0;

@@ -1,4 +1,4 @@
-package vn.edu.ueh.socialapplication;
+package vn.edu.ueh.socialapplication.auth;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -16,6 +16,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import vn.edu.ueh.socialapplication.R;
 
 public class EmailVerificationActivity extends AppCompatActivity {
 

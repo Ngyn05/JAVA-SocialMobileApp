@@ -1,4 +1,4 @@
-package vn.edu.ueh.socialapplication;
+package vn.edu.ueh.socialapplication.search;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -12,7 +12,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.User;
+import vn.edu.ueh.socialapplication.utils.ImageUtils;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
