@@ -68,16 +68,16 @@ public class PostRepository {
         void onLoaded(List<Post> posts);
     }
 
-    // --- Firestore Logic with Pagination ---
+    // --- Firestore Logic ---
 
-    /**
-     * Lấy bài viết từ danh sách following với phân trang.
-     */
     public Task<QuerySnapshot> getPostsByUserIdsPaginated(List<String> userIds, DocumentSnapshot lastVisible, int limit) {
-        Query query = postsCollection
-                .whereIn("userId", userIds)
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(limit);
+        Query query = postsCollection;
+        
+        if (userIds != null && !userIds.isEmpty()) {
+            query = query.whereIn("userId", userIds);
+        }
+        
+        query = query.orderBy("createdAt", Query.Direction.DESCENDING).limit(limit);
 
         if (lastVisible != null) {
             query = query.startAfter(lastVisible);
@@ -86,7 +86,16 @@ public class PostRepository {
         return query.get();
     }
 
-    // Giữ lại các hàm cũ nếu cần, hoặc cập nhật chúng
+    /**
+     * Lấy tất cả bài viết của một người dùng cụ thể.
+     */
+    public Task<QuerySnapshot> getPostsByUserId(String userId) {
+        return postsCollection
+                .whereEqualTo("userId", userId)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get();
+    }
+
     public void createPost(String content, Uri imageUri, FirebaseUser currentUser, @NonNull PostCreationCallback callback) {
         if (currentUser == null) {
             callback.onError("Người dùng chưa đăng nhập.");

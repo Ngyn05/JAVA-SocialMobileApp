@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
@@ -21,17 +22,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import vn.edu.ueh.socialapplication.profile.EditProfileActivity;
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.Post;
+import vn.edu.ueh.socialapplication.post.PostAdapter;
+import vn.edu.ueh.socialapplication.post.PostDetailActivity;
 import vn.edu.ueh.socialapplication.utils.ImageUtils;
 
-public class ProfileActivity extends AppCompatActivity {
+public class ProfileActivity extends AppCompatActivity implements PostAdapter.OnPostClickListener {
 
     private CircleImageView imageProfile;
     private TextView postsCount, followersCount, followingCount, fullname, bio, toolbarTitle;
     private MaterialButton btnAction;
     private ImageView optionsMenu;
     private RecyclerView recyclerViewPosts;
+    private PostAdapter postAdapter;
     private List<Post> postList;
     private LinearLayout followersLayout, followingLayout;
 
@@ -46,19 +51,17 @@ public class ProfileActivity extends AppCompatActivity {
 
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
 
-        // Get profileId from intent, or default to current user
         Intent intent = getIntent();
         profileId = intent.getStringExtra("uid");
         if (profileId == null) {
             if (firebaseUser != null) {
                 profileId = firebaseUser.getUid();
             } else {
-                finish(); // Should not happen if auth is handled correctly
+                finish();
                 return;
             }
         }
 
-        // --- KHỞI TẠO VIEWMODEL TRƯỚC KHI SỬ DỤNG ---
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
 
         initViews();
@@ -84,20 +87,22 @@ public class ProfileActivity extends AppCompatActivity {
         bio = findViewById(R.id.bio);
         btnAction = findViewById(R.id.btn_action);
         optionsMenu = findViewById(R.id.options_menu);
-//        recyclerViewPosts = findViewById(R.id.recycler_view_posts);
+        recyclerViewPosts = findViewById(R.id.recycler_view_posts);
         toolbarTitle = findViewById(R.id.toolbar_title);
         followersLayout = findViewById(R.id.followers_layout);
         followingLayout = findViewById(R.id.following_layout);
 
+        // Setup RecyclerView với LinearLayoutManager (danh sách dọc)
+        recyclerViewPosts.setHasFixedSize(true);
+        recyclerViewPosts.setLayoutManager(new LinearLayoutManager(this));
         postList = new ArrayList<>();
-        // Setup RecyclerView nếu cần thiết ở đây
+        postAdapter = new PostAdapter(postList, this);
+        recyclerViewPosts.setAdapter(postAdapter);
 
-        // Hide options menu if not current user
         if (firebaseUser != null && !profileId.equals(firebaseUser.getUid())) {
             optionsMenu.setVisibility(View.GONE);
         }
     }
-
 
     private void observeViewModel() {
         viewModel.getUser().observe(this, user -> {
@@ -106,7 +111,7 @@ public class ProfileActivity extends AppCompatActivity {
                     ImageUtils.loadImage(user.getAvatar(), imageProfile);
                 }
                 fullname.setText(user.getUserName());
-                toolbarTitle.setText(user.getUserId());
+                toolbarTitle.setText(user.getUserName());
                 bio.setText(user.getBio());
             }
         });
@@ -120,20 +125,15 @@ public class ProfileActivity extends AppCompatActivity {
             } else {
                 if (isFollowing) {
                     btnAction.setText("Đang theo dõi");
-                    btnAction.setBackgroundColor(getResources().getColor(android.R.color.white));
-                    btnAction.setTextColor(getResources().getColor(android.R.color.black));
                 } else {
                     btnAction.setText("Theo dõi");
-                    btnAction.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
-                    btnAction.setTextColor(getResources().getColor(android.R.color.white));
                 }
             }
         });
 
         viewModel.getUserPosts().observe(this, posts -> {
             if (posts != null) {
-                postList.clear();
-                postList.addAll(posts);
+                postAdapter.setPosts(posts);
                 postsCount.setText(String.valueOf(posts.size()));
             }
         });
@@ -155,17 +155,15 @@ public class ProfileActivity extends AppCompatActivity {
             }
         });
 
-//        followersLayout.setOnClickListener(v -> {
-//            // Đảm bảo FollowListActivity đã tồn tại hoặc xóa logic này nếu chưa có
-//            Toast.makeText(this, "Chức năng followers", Toast.LENGTH_SHORT).show();
-//        });
-//
-//        followingLayout.setOnClickListener(v -> {
-//            Toast.makeText(this, "Chức năng following", Toast.LENGTH_SHORT).show();
-//        });
-        
         optionsMenu.setOnClickListener(v -> {
-             Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show();
+             Toast.makeText(this, "Cài đặt", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    @Override
+    public void onCommentClick(Post post) {
+        Intent intent = new Intent(ProfileActivity.this, PostDetailActivity.class);
+        intent.putExtra("post_object", post);
+        startActivity(intent);
     }
 }
