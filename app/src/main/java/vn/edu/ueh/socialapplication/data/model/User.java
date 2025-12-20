@@ -1,6 +1,13 @@
+<<<<<<<< HEAD:app/src/main/java/vn/edu/ueh/socialapplication/data/model/User.java
 package vn.edu.ueh.socialapplication.data.model;
 
 import java.util.List;
+========
+// This class is deprecated and moved to vn.edu.ueh.socialapplication.data.model.User
+// keeping file to avoid "file not found" issues if referenced elsewhere before full cleanup, but commenting out content to avoid compilation conflicts.
+/*
+package vn.edu.ueh.socialapplication;
+>>>>>>>> origin/Ngyn:app/src/main/java/vn/edu/ueh/socialapplication/User.java
 
 public class User {
     private String userId;
@@ -34,3 +41,4 @@ public class User {
     public List<String> getFollowers() { return followers; }
     public void setFollowers(List<String> followers) { this.followers = followers; }
 }
+*/
