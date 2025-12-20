@@ -3,24 +3,16 @@ package vn.edu.ueh.socialapplication;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.google.firebase.auth.FirebaseUser;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -30,7 +22,6 @@ public class RegisterActivity extends AppCompatActivity {
     private ImageView backButton;
 
     private FirebaseAuth mAuth;
-    private FirebaseFirestore db;
     private UserRepository userRepository;
 
     @Override
@@ -47,11 +38,10 @@ public class RegisterActivity extends AppCompatActivity {
         backButton = findViewById(R.id.back_button_register);
 
         mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
         userRepository = new UserRepository();
 
         registerButton.setOnClickListener(v -> registerUser());
-        loginLink.setOnClickListener(v -> startActivity(new Intent(RegisterActivity.this, LoginActivity.class)));
+        loginLink.setOnClickListener(v -> finish()); 
         backButton.setOnClickListener(v -> finish());
     }
 
@@ -77,7 +67,7 @@ public class RegisterActivity extends AppCompatActivity {
                 if (isTaken) {
                     Toast.makeText(RegisterActivity.this, "User ID này đã có người sử dụng. Vui lòng chọn một ID khác.", Toast.LENGTH_LONG).show();
                 } else {
-                    proceedWithRegistration(userName, userId, email, password);
+                    createUserAndSendVerificationLink(userName, userId, email, password);
                 }
             }
 
@@ -88,33 +78,24 @@ public class RegisterActivity extends AppCompatActivity {
         });
     }
 
-    private void proceedWithRegistration(String userName, String userId, String email, String password) {
+    private void createUserAndSendVerificationLink(String userName, String userId, String email, String password) {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        String authUid = mAuth.getCurrentUser().getUid();
-                        Map<String, Object> user = new HashMap<>();
-                        user.put("userName", userName);
-                        user.put("userId", userId);
-                        user.put("email", email);
-                        user.put("avatar", "");
-                        user.put("bio", "");
+                        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                        if (firebaseUser != null) {
+                            firebaseUser.sendEmailVerification();
 
-                        db.collection("users").document(authUid).set(user)
-                                .addOnCompleteListener(saveTask -> {
-                                    if (saveTask.isSuccessful()) {
-                                        Toast.makeText(RegisterActivity.this, "Đăng ký thành công.", Toast.LENGTH_SHORT).show();
-                                        Intent intent = new Intent(RegisterActivity.this, HomeActivity.class);
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                        startActivity(intent);
-                                        finish();
-                                    } else {
-                                        Toast.makeText(RegisterActivity.this, "Lưu dữ liệu người dùng thất bại.", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
+                            // DO NOT save to database yet. Pass data to the verification screen.
+                            Intent intent = new Intent(RegisterActivity.this, EmailVerificationActivity.class);
+                            intent.putExtra("uid", firebaseUser.getUid());
+                            intent.putExtra("userName", userName);
+                            intent.putExtra("userId", userId);
+                            intent.putExtra("email", email);
+                            startActivity(intent);
+                        }
                     } else {
-                        Toast.makeText(RegisterActivity.this, "Xác thực thất bại: " + task.getException().getMessage(),
-                                Toast.LENGTH_LONG).show();
+                        Toast.makeText(RegisterActivity.this, "Đăng ký thất bại: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
     }

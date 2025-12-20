@@ -30,8 +30,7 @@
         <activity android:name=".ForgotPasswordActivity" />
         <activity android:name=".ProfileActivity" />
         <activity android:name=".EditProfileActivity" />
-<!--        <activity android:name=".SearchActivity" />-->
-        <activity android:name=".FollowListActivity" />
+        <activity android:name=".EmailVerificationActivity" />
     </application>
 
 </manifest>

@@ -79,6 +79,33 @@ public class LoginActivity extends AppCompatActivity {
         backButton.setOnClickListener(v -> finish());
     }
 
+    private void loginUser() {
+        String email = emailInput.getText().toString().trim();
+        String password = passwordInput.getText().toString().trim();
+
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
+            Toast.makeText(this, "Vui lòng nhập email và mật khẩu", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if (user != null && user.isEmailVerified()) {
+                            // Email is verified, proceed to home
+                            navigateToHome();
+                        } else {
+                            // Email is not verified
+                            Toast.makeText(LoginActivity.this, "Vui lòng xác thực email của bạn trước khi đăng nhập.", Toast.LENGTH_LONG).show();
+                            mAuth.signOut(); // Sign out to prevent inconsistent state
+                        }
+                    } else {
+                        Toast.makeText(LoginActivity.this, "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.", Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
     private void signInWithGoogle() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
@@ -142,25 +169,6 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(LoginActivity.this, "Lỗi khi kiểm tra dữ liệu người dùng.", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    private void loginUser() {
-        String email = emailInput.getText().toString().trim();
-        String password = passwordInput.getText().toString().trim();
-
-        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Vui lòng nhập email và mật khẩu", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        navigateToHome();
-                    } else {
-                        Toast.makeText(LoginActivity.this, "Xác thực thất bại: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                });
     }
 
     private void navigateToHome() {
