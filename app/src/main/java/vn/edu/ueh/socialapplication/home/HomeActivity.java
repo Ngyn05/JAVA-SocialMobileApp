@@ -32,6 +32,7 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.ArrayList;
 import java.util.List;
 
+import vn.edu.ueh.socialapplication.post.CreatePostActivity;
 import vn.edu.ueh.socialapplication.profile.EditProfileActivity;
 import vn.edu.ueh.socialapplication.utils.ImageUtils;
 import vn.edu.ueh.socialapplication.auth.LoginActivity;
@@ -54,6 +55,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     private UserAdapter userAdapter;
     private List<User> userList;
     private ImageView profileImage;
+    private ImageView addPostIcon;
     private EditText searchBar;
     private ProgressBar progressBar;
     private TextView noResultsText;
@@ -75,6 +77,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
 
         // Initialize views
         profileImage = findViewById(R.id.profile_image);
+        addPostIcon = findViewById(R.id.add_post_icon);
         searchBar = findViewById(R.id.search_bar_home);
         progressBar = findViewById(R.id.progress_bar_home);
         noResultsText = findViewById(R.id.no_results_text_home);
@@ -181,6 +184,10 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
 
     private void setupListeners() {
         profileImage.setOnClickListener(this::showProfileMenu);
+
+        addPostIcon.setOnClickListener(v -> {
+            startActivity(new Intent(HomeActivity.this, CreatePostActivity.class));
+        });
 
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override
