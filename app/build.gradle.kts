@@ -50,8 +50,11 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation(libs.room.common.jvm)
+    implementation(libs.room.runtime)
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
     implementation("de.hdodenhof:circleimageview:3.1.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
@@ -61,4 +64,5 @@ dependencies {
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor(libs.room.compiler)
 }

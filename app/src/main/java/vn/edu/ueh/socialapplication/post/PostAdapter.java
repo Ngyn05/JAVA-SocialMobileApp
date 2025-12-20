@@ -122,7 +122,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
      * Logic bắt sự kiện click được chuyển vào hàm bind().
      */
     public class PostViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvContent, tvLikeCount, tvCommentCount;
+        TextView tvName, tvContent, tvDate, tvLikeCount, tvCommentCount;
         ImageView imgPost;
         ImageView btnComment, btnLike;
         ImageView imgAvatar; // Thêm ImageView cho avatar
@@ -131,6 +131,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             super(itemView);
             tvName = itemView.findViewById(R.id.tvUsername);
             tvContent = itemView.findViewById(R.id.tvCaption);
+            tvDate = itemView.findViewById(R.id.tvDate);
             tvLikeCount = itemView.findViewById(R.id.tvLikeCount);
             tvCommentCount = itemView.findViewById(R.id.tvCommentCount);
             imgPost = itemView.findViewById(R.id.imgPost);
@@ -143,6 +144,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         public void bind(final Post post, final OnPostClickListener listener) {
             tvName.setText(post.getUserName());
             tvContent.setText(post.getContent());
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+            String dateStr = sdf.format(post.getCreatedAt());
+            tvDate.setText(dateStr);
 
             // Load ảnh bài đăng
             if (post.getImage() != null && !post.getImage().isEmpty()) {

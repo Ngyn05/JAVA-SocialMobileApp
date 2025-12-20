@@ -34,17 +34,33 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.CommentV
         Comment comment = commentList.get(position);
         holder.tvUser.setText(comment.getUserName());
         holder.tvContent.setText(comment.getContent());
+
+        // KIỂM TRA NULL Ở ĐÂY ĐỂ TRÁNH CRASH
+        if (comment.getCreatedAt() != null) {
+            try {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+                // Nếu getCreatedAt() trả về Timestamp của Firebase:
+                String dateStr = sdf.format(comment.getCreatedAt());
+                holder.tvDate.setText(dateStr);
+            } catch (Exception e) {
+                holder.tvDate.setText(""); // Nếu lỗi định dạng thì để trống
+            }
+        } else {
+            // Nếu ngày tháng trên server chưa có (đang đợi server xử lý FieldValue.serverTimestamp())
+            holder.tvDate.setText("Đang gửi...");
+        }
     }
 
     @Override
     public int getItemCount() { return commentList.size(); }
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
-        TextView tvUser, tvContent;
+        TextView tvUser, tvContent, tvDate;
         public CommentViewHolder(@NonNull View itemView) {
             super(itemView);
             tvUser = itemView.findViewById(R.id.tvCommentUser);
             tvContent = itemView.findViewById(R.id.tvCommentContent);
+            tvDate = itemView.findViewById(R.id.tvCommentDate);
         }
     }
 }

@@ -1,11 +1,15 @@
 package vn.edu.ueh.socialapplication.data.model;
 
+import java.util.List;
+
 public class User {
     private String userId;
     private String userName;
     private String email;
     private String avatar;
     private String bio;
+    private List<String> followers;
+    private List<String> following;
 
     // Required empty public constructor for Firestore
     public User() {}
@@ -25,4 +29,8 @@ public class User {
 
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
+    public List<String> getFollowing() { return following; }
+    public void setFollowing(List<String> following) { this.following = following; }
+    public List<String> getFollowers() { return followers; }
+    public void setFollowers(List<String> followers) { this.followers = followers; }
 }

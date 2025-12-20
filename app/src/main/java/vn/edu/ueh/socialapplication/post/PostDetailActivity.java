@@ -74,14 +74,7 @@ public class PostDetailActivity extends AppCompatActivity {
                 viewModel.toggleLike(currentPost.getPostId());
             });
 
-            if (tvLikeCount != null) {
-                tvLikeCount.setText(String.valueOf(currentPost.getLikesCount()));
-            }
-
-            // 4. LOAD COMMENT COUNT (Lấy từ field int comments)
-            if (tvCommentCount != null) {
-                tvCommentCount.setText(String.valueOf(currentPost.getComments()));
-            }
+            updateLikeCommentCount(tvCommentCount, tvLikeCount, currentPost);
 
             // 4. Setup danh sách Comment
             rvComments.setLayoutManager(new LinearLayoutManager(this));
@@ -112,6 +105,15 @@ public class PostDetailActivity extends AppCompatActivity {
                     Toast.makeText(this, "Đã gửi bình luận", Toast.LENGTH_SHORT).show();
                 } else if (isSuccess != null && !isSuccess) {
                     Toast.makeText(this, "Gửi bình luận thất bại", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            viewModel.listenForPostChanges(currentPost.getPostId());
+
+            viewModel.getPostData().observe(this, updatedPost -> {
+                if (updatedPost != null) {
+                    updateLikeCommentCount(tvCommentCount, tvLikeCount, updatedPost);
+                    this.currentPost = updatedPost;
                 }
             });
         }
@@ -159,4 +161,8 @@ public class PostDetailActivity extends AppCompatActivity {
         }
     }
 
+    private void updateLikeCommentCount(TextView tvCommentCount, TextView tvLikeCount, Post updatedPost) {
+        tvCommentCount.setText(String.valueOf(updatedPost.getComments()));
+        tvLikeCount.setText(String.valueOf(updatedPost.getLikesCount()));
+    }
 }

@@ -32,11 +32,9 @@
         <activity android:name=".WelcomeActivity" />
         <activity android:name=".LoginActivity" />
         <activity android:name=".RegisterActivity" />
-        <activity android:name=".HomeActivity" />
         <activity android:name=".ForgotPasswordActivity" />
         <activity android:name=".ProfileActivity" />
         <activity android:name=".EditProfileActivity" />
-        <activity android:name=".SearchActivity" />
     </application>
 
 </manifest>

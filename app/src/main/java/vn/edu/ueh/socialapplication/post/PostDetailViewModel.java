@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import vn.edu.ueh.socialapplication.data.model.Comment;
+import vn.edu.ueh.socialapplication.data.model.Post;
 import vn.edu.ueh.socialapplication.data.model.User;
 import vn.edu.ueh.socialapplication.data.repository.CommentRepository;
 
@@ -30,6 +31,12 @@ public class PostDetailViewModel extends ViewModel {
 
     private final MutableLiveData<List<Comment>> commentsData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> commentPostStatus = new MutableLiveData<>();
+
+    private final MutableLiveData<Post> postData = new MutableLiveData<>();
+
+    public LiveData<Post> getPostData() {
+        return postData;
+    }
 
     // 1. Hàm khởi tạo (Constructor) - Tự động chạy khi mở màn hình Detail
     public PostDetailViewModel() {
@@ -75,6 +82,19 @@ public class PostDetailViewModel extends ViewModel {
                         }
                     }
                     commentsData.setValue(comments);
+                });
+    }
+
+    public void listenForPostChanges(String postId) {
+        db.collection("posts").document(postId)
+                .addSnapshotListener((snapshot, e) -> {
+                    if (e != null || snapshot == null || !snapshot.exists()) return;
+
+                    vn.edu.ueh.socialapplication.data.model.Post post = snapshot.toObject(vn.edu.ueh.socialapplication.data.model.Post.class);
+                    if (post != null) {
+                        post.setPostId(snapshot.getId());
+                        postData.setValue(post); // Đẩy dữ liệu mới nhất (số comment mới) về Activity
+                    }
                 });
     }
 
