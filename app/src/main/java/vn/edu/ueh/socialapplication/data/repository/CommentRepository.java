@@ -1,58 +1,57 @@
 package vn.edu.ueh.socialapplication.data.repository;
 
 import android.util.Log;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
+
+import androidx.annotation.NonNull;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
+import java.util.Date;
+
 import vn.edu.ueh.socialapplication.data.model.Comment;
 
 public class CommentRepository {
     private static final String TAG = "CommentRepository";
-    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final CollectionReference postsCollection = FirebaseFirestore.getInstance().collection("posts");
 
-    // Lấy danh sách bình luận cho một bài đăng
-    public Task<QuerySnapshot> getCommentsForPost(String postId) {
-        // KIỂM TRA NULL ĐỂ TRÁNH CRASH (Sửa lỗi Fatal Exception bạn gặp)
-        if (postId == null || postId.isEmpty()) {
-            Log.e(TAG, "getCommentsForPost: postId is null or empty");
-            // Trả về một task bị fail thay vì để app crash
-            return Tasks.forException(new NullPointerException("Provided document path must not be null."));
-        }
-
-        // Cấu trúc: posts/{postId}/comments
-        return db.collection("posts")
-                .document(postId)
-                .collection("comments")
-                .orderBy("createdAt", Query.Direction.ASCENDING)
-                .get();
+    public interface CommentPostCallback {
+        void onSuccess();
+        void onError(String message);
     }
 
-    // Thêm một bình luận mới vào bài đăng và cập nhật commentId
-    public Task<Void> addComment(String postId, Comment comment) {
-        if (postId == null || postId.isEmpty()) {
-            return Tasks.forException(new NullPointerException("postId is null"));
+    public Query getCommentsQuery(String postId) {
+        return postsCollection.document(postId).collection("comments")
+                .orderBy("createdAt", Query.Direction.ASCENDING);
+    }
+
+    public void postComment(String postId, String content, @NonNull CommentPostCallback callback) {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            callback.onError("User not logged in");
+            return;
         }
 
-        CollectionReference commentsRef = db.collection("posts")
-                .document(postId)
-                .collection("comments");
+        String userId = firebaseUser.getUid();
+        String userName = firebaseUser.getDisplayName();
+        String userAvatar = firebaseUser.getPhotoUrl() != null ? firebaseUser.getPhotoUrl().toString() : "";
 
-        // Sử dụng logic tương tự PostRepository: Add -> Get ID -> Update ID
-        return commentsRef.add(comment).continueWithTask(task -> {
-            if (!task.isSuccessful()) {
-                throw task.getException();
-            }
+        Comment comment = new Comment(userId, userName, userAvatar, content, new Date());
 
-            // Lấy DocumentReference của comment vừa tạo
-            DocumentReference docRef = task.getResult();
-            String generatedCommentId = docRef.getId();
-
-            // Cập nhật trường commentId vào bên trong document
-            return docRef.update("commentId", generatedCommentId);
-        });
+        postsCollection.document(postId).collection("comments").add(comment)
+            .addOnSuccessListener(documentReference -> {
+                // Also, increment the comments count in the main post document
+                postsCollection.document(postId).update("comments", com.google.firebase.firestore.FieldValue.increment(1))
+                        .addOnSuccessListener(aVoid -> callback.onSuccess())
+                        .addOnFailureListener(e -> {
+                            Log.e(TAG, "Error updating comment count", e);
+                            callback.onError("Error updating comment count");
+                        });
+            })
+            .addOnFailureListener(e -> {
+                Log.e(TAG, "Error posting comment", e);
+                callback.onError("Error posting comment");
+            });
     }
 }
