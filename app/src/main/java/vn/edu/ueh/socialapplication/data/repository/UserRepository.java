@@ -1,4 +1,4 @@
-package vn.edu.ueh.socialapplication;
+package vn.edu.ueh.socialapplication.data.repository;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;

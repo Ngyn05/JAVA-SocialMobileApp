@@ -1,10 +1,5 @@
 package vn.edu.ueh.socialapplication.post;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -16,16 +11,22 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+
 import com.bumptech.glide.Glide;
 
 import vn.edu.ueh.socialapplication.R;
 
 public class CreatePostActivity extends AppCompatActivity {
 
-    private ImageView postImage;
-    private EditText postText;
-    private Button submitPostButton;
+    private ImageView postImageView;
+    private EditText postContentEditText;
+    private Button postButton;
     private ProgressBar progressBar;
+
     private Uri imageUri;
     private PostViewModel postViewModel;
 
@@ -34,7 +35,7 @@ public class CreatePostActivity extends AppCompatActivity {
             result -> {
                 if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                     imageUri = result.getData().getData();
-                    Glide.with(this).load(imageUri).into(postImage);
+                    Glide.with(this).load(imageUri).into(postImageView);
                 }
             });
 
@@ -43,37 +44,45 @@ public class CreatePostActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_post);
 
-        postViewModel = new ViewModelProvider(this).get(PostViewModel.class);
+        // Create the factory
+        PostViewModelFactory factory = new PostViewModelFactory(getApplication());
+        // Use the factory to get the ViewModel
+        postViewModel = new ViewModelProvider(this, factory).get(PostViewModel.class);
 
-        postImage = findViewById(R.id.post_image);
-        postText = findViewById(R.id.post_text);
-        submitPostButton = findViewById(R.id.submit_post_button);
+        postImageView = findViewById(R.id.post_image_view);
+        postContentEditText = findViewById(R.id.post_content_edit_text);
+        postButton = findViewById(R.id.post_button);
         progressBar = findViewById(R.id.progress_bar);
 
-        postImage.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK);
-            intent.setType("image/*");
-            imagePickerLauncher.launch(intent);
-        });
+        postImageView.setOnClickListener(v -> openImagePicker());
 
-        submitPostButton.setOnClickListener(v -> {
-            String content = postText.getText().toString().trim();
-            if (!content.isEmpty() || imageUri != null) {
-                setLoading(true);
-                postViewModel.createPost(content, imageUri);
-            } else {
-                Toast.makeText(this, "Please add content or an image.", Toast.LENGTH_SHORT).show();
-            }
-        });
+        postButton.setOnClickListener(v -> createPost());
 
         observeViewModel();
+    }
+
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        imagePickerLauncher.launch(intent);
+    }
+
+    private void createPost() {
+        String content = postContentEditText.getText().toString().trim();
+        if (content.isEmpty() && imageUri == null) {
+            Toast.makeText(this, "Please add content or an image", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        setLoading(true);
+        postViewModel.createPost(content, imageUri);
     }
 
     private void observeViewModel() {
         postViewModel.getPostCreationResult().observe(this, success -> {
             if (success) {
                 setLoading(false);
-                Toast.makeText(this, "Post created successfully!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Post created successfully", Toast.LENGTH_SHORT).show();
                 finish();
             }
         });
@@ -87,12 +96,7 @@ public class CreatePostActivity extends AppCompatActivity {
     }
 
     private void setLoading(boolean isLoading) {
-        if (isLoading) {
-            progressBar.setVisibility(View.VISIBLE);
-            submitPostButton.setEnabled(false);
-        } else {
-            progressBar.setVisibility(View.GONE);
-            submitPostButton.setEnabled(true);
-        }
+        progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        postButton.setEnabled(!isLoading);
     }
 }

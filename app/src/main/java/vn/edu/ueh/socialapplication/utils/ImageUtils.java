@@ -1,4 +1,4 @@
-package vn.edu.ueh.socialapplication;
+package vn.edu.ueh.socialapplication.utils;
 
 import android.widget.ImageView;
 

@@ -1,23 +1,26 @@
 package vn.edu.ueh.socialapplication.post;
 
+import android.app.Application;
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import vn.edu.ueh.socialapplication.data.repository.PostRepository;
 
-public class PostViewModel extends ViewModel {
+public class PostViewModel extends AndroidViewModel {
     private final PostRepository postRepository;
     private final MutableLiveData<Boolean> postCreationResult = new MutableLiveData<>();
     private final MutableLiveData<String> postCreationError = new MutableLiveData<>();
 
-    public PostViewModel() {
-        this.postRepository = new PostRepository();
+    public PostViewModel(@NonNull Application application) {
+        super(application);
+        this.postRepository = new PostRepository(application);
     }
 
     public LiveData<Boolean> getPostCreationResult() {

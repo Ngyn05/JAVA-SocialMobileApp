@@ -1,12 +1,10 @@
-package vn.edu.ueh.socialapplication;
+package vn.edu.ueh.socialapplication.profile;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -30,7 +28,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import vn.edu.ueh.socialapplication.R;
+import vn.edu.ueh.socialapplication.data.repository.UserRepository;
 import vn.edu.ueh.socialapplication.data.model.User;
+import vn.edu.ueh.socialapplication.utils.ImageUtils;
 
 public class EditProfileActivity extends AppCompatActivity {
 

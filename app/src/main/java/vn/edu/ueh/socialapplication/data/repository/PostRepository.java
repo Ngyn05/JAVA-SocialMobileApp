@@ -1,10 +1,10 @@
 package vn.edu.ueh.socialapplication.data.repository;
 
+import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.cloudinary.android.MediaManager;
 import com.cloudinary.android.callback.ErrorInfo;
@@ -21,63 +21,72 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import vn.edu.ueh.socialapplication.data.local.AppDatabase;
+import vn.edu.ueh.socialapplication.data.local.PostDao;
 import vn.edu.ueh.socialapplication.data.model.Post;
 
 public class PostRepository {
 
     private static final String TAG = "PostRepository";
-    public static final int PAGE_SIZE = 10;
     private final CollectionReference postsCollection;
+    private final PostDao postDao;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public interface PostCreationCallback {
         void onSuccess();
         void onError(String errorMessage);
     }
 
-    public interface PostsPageCallback {
-        void onSuccess(List<Post> posts, DocumentSnapshot lastVisible);
-        void onError(String errorMessage);
-    }
-
-    public PostRepository() {
+    public PostRepository(Context context) {
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         this.postsCollection = firestore.collection("posts");
+        this.postDao = AppDatabase.getInstance(context).postDao();
     }
 
-    public void getPostsPage(@Nullable DocumentSnapshot lastVisible, @NonNull PostsPageCallback callback) {
+    // --- Offline Logic (Room) ---
+
+    public void savePostsToLocal(List<Post> posts, boolean clearOld) {
+        executorService.execute(() -> {
+            if (clearOld) {
+                postDao.deleteAllPosts();
+            }
+            postDao.insertPosts(posts);
+        });
+    }
+
+    public void getLocalPosts(OnLocalPostsLoadedCallback callback) {
+        executorService.execute(() -> {
+            List<Post> posts = postDao.getAllPosts();
+            callback.onLoaded(posts);
+        });
+    }
+
+    public interface OnLocalPostsLoadedCallback {
+        void onLoaded(List<Post> posts);
+    }
+
+    // --- Firestore Logic with Pagination ---
+
+    /**
+     * Lấy bài viết từ danh sách following với phân trang.
+     */
+    public Task<QuerySnapshot> getPostsByUserIdsPaginated(List<String> userIds, DocumentSnapshot lastVisible, int limit) {
         Query query = postsCollection
+                .whereIn("userId", userIds)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
-                .limit(PAGE_SIZE);
+                .limit(limit);
 
         if (lastVisible != null) {
             query = query.startAfter(lastVisible);
         }
 
-        query.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                QuerySnapshot snapshot = task.getResult();
-                List<Post> postList = new ArrayList<>();
-                for (DocumentSnapshot doc : snapshot.getDocuments()) {
-                    Post post = doc.toObject(Post.class);
-                    if (post != null) {
-                        post.setPostId(doc.getId());
-                        postList.add(post);
-                    }
-                }
-
-                DocumentSnapshot newLastVisible = null;
-                if (!snapshot.isEmpty()) {
-                    newLastVisible = snapshot.getDocuments().get(snapshot.size() - 1);
-                }
-                callback.onSuccess(postList, newLastVisible);
-            } else {
-                Log.e(TAG, "Error getting posts.", task.getException());
-                callback.onError("Failed to load posts.");
-            }
-        });
+        return query.get();
     }
 
+    // Giữ lại các hàm cũ nếu cần, hoặc cập nhật chúng
     public void createPost(String content, Uri imageUri, FirebaseUser currentUser, @NonNull PostCreationCallback callback) {
         if (currentUser == null) {
             callback.onError("Người dùng chưa đăng nhập.");
@@ -103,27 +112,23 @@ public class PostRepository {
 
                     @Override
                     public void onError(String requestId, ErrorInfo error) {
-                        Log.e(TAG, "Cloudinary upload error: " + error.getDescription());
                         callback.onError("Tải ảnh lên thất bại: " + error.getDescription());
                     }
-                    @Override public void onStart(String requestId) {}
-                    @Override public void onProgress(String requestId, long bytes, long totalBytes) {}
-                    @Override public void onReschedule(String requestId, ErrorInfo error) {}
+
+                    @Override
+                    public void onStart(String requestId) {}
+                    @Override
+                    public void onProgress(String requestId, long bytes, long totalBytes) {}
+                    @Override
+                    public void onReschedule(String requestId, ErrorInfo error) {}
                 })
                 .dispatch();
     }
 
     private void savePostToFirestore(String content, String imageUrl, FirebaseUser currentUser, @NonNull PostCreationCallback callback) {
-        String userId = currentUser.getUid();
-        String userName = currentUser.getDisplayName();
-
-        if (userName == null || userName.isEmpty()) {
-            userName = "Người dùng ẩn danh";
-        }
-
         Post newPost = new Post(
-                userId,
-                userName,
+                currentUser.getUid(),
+                currentUser.getDisplayName() != null ? currentUser.getDisplayName() : "Anonymous",
                 content,
                 imageUrl,
                 new Date()
@@ -133,15 +138,9 @@ public class PostRepository {
                 .addOnSuccessListener(documentReference -> {
                     String generatedPostId = documentReference.getId();
                     documentReference.update("postId", generatedPostId)
-                            .addOnSuccessListener(aVoid -> {
-                                callback.onSuccess();
-                            })
-                            .addOnFailureListener(e -> {
-                                callback.onError("Lỗi khi cập nhật postId.");
-                            });
+                            .addOnSuccessListener(aVoid -> callback.onSuccess())
+                            .addOnFailureListener(e -> callback.onError("Lỗi cập nhật ID."));
                 })
-                .addOnFailureListener(e -> {
-                    callback.onError("Đã có lỗi xảy ra khi đăng bài.");
-                });
+                .addOnFailureListener(e -> callback.onError("Lỗi lưu Firestore."));
     }
 }

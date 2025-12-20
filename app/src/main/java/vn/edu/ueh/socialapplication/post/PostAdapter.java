@@ -1,135 +1,205 @@
 package vn.edu.ueh.socialapplication.post;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
-import com.google.android.material.imageview.ShapeableImageView;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.auth.FirebaseAuth;
 
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-
-import de.hdodenhof.circleimageview.CircleImageView;
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.Post;
 
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
+    private String currentUserId = FirebaseAuth.getInstance().getUid();
+    private List<Post> postList;
+    private final OnPostClickListener listener;
 
-    private List<Post> posts;
-    private final OnPostClickListener onPostClickListener;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
-
-    public interface OnPostClickListener {
-        void onCommentClick(Post post);
-        // We can add onLikeClick here later
-    }
-
-    public PostAdapter(List<Post> posts, OnPostClickListener onPostClickListener) {
-        this.posts = posts;
-        this.onPostClickListener = onPostClickListener;
+    // Sửa lại Constructor: Chỉ cần nhận listener. Dữ liệu sẽ được cập nhật qua một phương thức riêng.
+    public PostAdapter(List<Post> postList, OnPostClickListener listener) {
+        this.postList = postList;
+        this.listener = listener;
     }
 
     @NonNull
     @Override
     public PostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_post, parent, false);
-        return new PostViewHolder(view);
+        return new PostViewHolder(view); // Không cần truyền listener và list vào đây nữa
     }
 
     @Override
     public void onBindViewHolder(@NonNull PostViewHolder holder, int position) {
-        Post post = posts.get(position);
-        holder.bind(post, onPostClickListener);
+        Post post = postList.get(position);
+        holder.bind(post, listener);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull PostViewHolder holder, int position, @NonNull List<Object> payloads) {
+        if (!payloads.isEmpty()) {
+            Post post = postList.get(position);
+            for (Object payload : payloads) {
+                if (payload.equals("LIKE_UPDATE")) {
+                    // CHỈ cập nhật UI Like
+                    if (post.getLikes().contains(currentUserId)) {
+                        holder.btnLike.setImageResource(R.drawable.ic_liked);
+                    } else {
+                        holder.btnLike.setImageResource(R.drawable.ic_unliked);
+                    }
+                    holder.tvLikeCount.setText(String.valueOf(post.getLikesCount()));
+                }
+            }
+        } else {
+            // Nếu không có payload, gọi lại hàm onBindViewHolder cơ bản ở trên
+            super.onBindViewHolder(holder, position, payloads);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return posts.size();
+        return postList.size();
     }
 
-    public void setPosts(List<Post> posts) {
-        this.posts = posts;
-        notifyDataSetChanged();
+    /**
+     * Thêm phương thức này để cập nhật danh sách bài đăng từ Activity/Fragment.
+     * Đây là một cách làm rất phổ biến và linh hoạt.
+     */
+    public void setPosts(List<Post> newPostList) {
+        this.postList = newPostList;
+        notifyDataSetChanged(); // Thông báo cho Adapter rằng dữ liệu đã thay đổi để vẽ lại UI
     }
 
-    class PostViewHolder extends RecyclerView.ViewHolder {
+    // Định nghĩa interface cho sự kiện click
+    public interface OnPostClickListener {
+        void onCommentClick(Post post);
+    }
 
-        private final CircleImageView ivUserAvatar;
-        private final TextView tvUsername;
-        private final TextView tvPostDate;
-        private final TextView tvPostContent;
-        private final ShapeableImageView ivPostImage;
-        private final ImageView btnLike;
-        private final ImageView btnComment;
-        private final TextView tvLikeCount;
-        private final TextView tvCommentCount;
+    public void toggleLike(int position) {
+        if (currentUserId == null) return;
+
+        Post post = postList.get(position);
+        String postId = post.getPostId();
+
+        // Kiểm tra postId trước khi gọi Firestore
+        if (postId == null) {
+            Log.e("PostAdapter", "PostId is null at position: " + position);
+            return;
+        }
+
+        List<String> likes = post.getLikes();
+        if (likes == null) likes = new ArrayList<>();
+
+        if (likes.contains(currentUserId)) {
+            likes.remove(currentUserId);
+        } else {
+            likes.add(currentUserId);
+        }
+        post.setLikes(likes);
+        notifyItemChanged(position, "LIKE_UPDATE");
+
+        // Cập nhật Database
+        DocumentReference postRef = FirebaseFirestore.getInstance().collection("posts").document(postId);
+        if (likes.contains(currentUserId)) {
+            postRef.update("likes", FieldValue.arrayUnion(currentUserId));
+        } else {
+            postRef.update("likes", FieldValue.arrayRemove(currentUserId));
+        }
+    }
+
+
+    /**
+     * Chuyển ViewHolder thành non-static để dễ dàng truy cập.
+     * Logic bắt sự kiện click được chuyển vào hàm bind().
+     */
+    public class PostViewHolder extends RecyclerView.ViewHolder {
+        TextView tvName, tvContent, tvDate, tvLikeCount, tvCommentCount;
+        ImageView imgPost;
+        ImageView btnComment, btnLike;
+        ImageView imgAvatar; // Thêm ImageView cho avatar
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivUserAvatar = itemView.findViewById(R.id.iv_user_avatar);
-            tvUsername = itemView.findViewById(R.id.tv_username);
-            tvPostDate = itemView.findViewById(R.id.tv_post_date);
-            tvPostContent = itemView.findViewById(R.id.tv_post_content);
-            ivPostImage = itemView.findViewById(R.id.iv_post_image);
-            btnLike = itemView.findViewById(R.id.btn_like);
-            btnComment = itemView.findViewById(R.id.btn_comment);
-            tvLikeCount = itemView.findViewById(R.id.tv_like_count);
-            tvCommentCount = itemView.findViewById(R.id.tv_comment_count);
+            tvName = itemView.findViewById(R.id.tvUsername);
+            tvContent = itemView.findViewById(R.id.tvCaption);
+            tvDate = itemView.findViewById(R.id.tvDate);
+            tvLikeCount = itemView.findViewById(R.id.tvLikeCount);
+            tvCommentCount = itemView.findViewById(R.id.tvCommentCount);
+            imgPost = itemView.findViewById(R.id.imgPost);
+            btnComment = itemView.findViewById(R.id.btnComment);
+            btnLike = itemView.findViewById(R.id.btnLike);
+            imgAvatar = itemView.findViewById(R.id.imgAvatar); // Ánh xạ avatar từ layout
         }
 
-        public void bind(Post post, OnPostClickListener listener) {
-            tvUsername.setText(post.getUserName());
-            tvPostContent.setText(post.getContent());
+        // Tạo hàm bind để gán dữ liệu và bắt sự kiện
+        public void bind(final Post post, final OnPostClickListener listener) {
+            tvName.setText(post.getUserName());
+            tvContent.setText(post.getContent());
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+            String dateStr = sdf.format(post.getCreatedAt());
+            tvDate.setText(dateStr);
 
-            if (post.getCreatedAt() != null) {
-                tvPostDate.setText(dateFormat.format(post.getCreatedAt()));
-            }
-
-            // For now, we use a placeholder for the user avatar
-            Glide.with(itemView.getContext())
-                    .load(R.drawable.ic_user_placeholder)
-                    .into(ivUserAvatar);
-
+            // Load ảnh bài đăng
             if (post.getImage() != null && !post.getImage().isEmpty()) {
-                ivPostImage.setVisibility(View.VISIBLE);
+                imgPost.setVisibility(View.VISIBLE);
                 Glide.with(itemView.getContext())
                         .load(post.getImage())
-                        .into(ivPostImage);
+                        .into(imgPost);
             } else {
-                ivPostImage.setVisibility(View.GONE);
+                imgPost.setVisibility(View.GONE); // Ẩn ImageView nếu không có ảnh
             }
 
-            // --- FIX STARTS HERE ---
-
-            // 1. Set correct like and comment counts
-            tvLikeCount.setText(String.valueOf(post.getLikesCount()));
-            tvCommentCount.setText(String.valueOf(post.getComments()));
-
-            // 2. Set correct like button state
-            String currentUserId = FirebaseAuth.getInstance().getUid();
             if (currentUserId != null && post.getLikes() != null && post.getLikes().contains(currentUserId)) {
-                btnLike.setImageResource(R.drawable.ic_liked);
+                // TRƯỜNG HỢP ĐÃ LIKE
+                btnLike.setImageResource(R.drawable.ic_liked); // Dùng icon trái tim đầy
             } else {
-                btnLike.setImageResource(R.drawable.ic_unliked);
+                // TRƯỜNG HỢP CHƯA LIKE
+                btnLike.setImageResource(R.drawable.ic_unliked); // Dùng icon trái tim trống
             }
 
-            // --- FIX ENDS HERE ---
+            if (tvLikeCount != null) {
+                tvLikeCount.setText(String.valueOf(post.getLikesCount()));
+            }
 
+            if (tvCommentCount != null) {
+                tvCommentCount.setText(String.valueOf(post.getComments()));
+            }
+
+//            // Load ảnh đại diện (avatar)
+//            // Giả sử model Post của bạn có trường `authorAvatarUrl`
+//            if (post.getAvatarUrl() != null && !post.getAvatarUrl().isEmpty()) {
+//                Glide.with(itemView.getContext())
+//                        .load(post.getAvatarUrl())
+//                        .placeholder(R.drawable.ic_default_avatar) // Ảnh chờ trong lúc tải
+//                        .error(R.drawable.ic_default_avatar) // Ảnh hiển thị khi lỗi
+//                        .into(imgAvatar);
+//            } else {
+//                // Nếu không có avatar, hiển thị ảnh mặc định
+//                imgAvatar.setImageResource(R.drawable.ic_default_avatar);
+//            }
+
+            // Bắt sự kiện click cho nút comment
             btnComment.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onCommentClick(post);
                 }
             });
-            
-            // TODO: Add listener for like button
+            btnLike.setOnClickListener(v -> {
+                // Truyền position vào hàm toggleLike
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION) {
+                    toggleLike(position);
+                }
+            });
         }
     }
 }
