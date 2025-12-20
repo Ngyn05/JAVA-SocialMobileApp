@@ -27,12 +27,14 @@ import java.util.concurrent.Executors;
 import vn.edu.ueh.socialapplication.data.local.AppDatabase;
 import vn.edu.ueh.socialapplication.data.local.PostDao;
 import vn.edu.ueh.socialapplication.data.model.Post;
+import vn.edu.ueh.socialapplication.data.model.User;
 
 public class PostRepository {
 
     private static final String TAG = "PostRepository";
     private final CollectionReference postsCollection;
     private final PostDao postDao;
+    private final FirebaseFirestore firestore;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public interface PostCreationCallback {
@@ -41,7 +43,7 @@ public class PostRepository {
     }
 
     public PostRepository(Context context) {
-        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        this.firestore = FirebaseFirestore.getInstance();
         this.postsCollection = firestore.collection("posts");
         this.postDao = AppDatabase.getInstance(context).postDao();
     }
@@ -86,9 +88,6 @@ public class PostRepository {
         return query.get();
     }
 
-    /**
-     * Lấy tất cả bài viết của một người dùng cụ thể.
-     */
     public Task<QuerySnapshot> getPostsByUserId(String userId) {
         return postsCollection
                 .whereEqualTo("userId", userId)
@@ -102,18 +101,34 @@ public class PostRepository {
             return;
         }
 
-        if (imageUri == null) {
-            savePostToFirestore(content, null, currentUser, callback);
-            return;
-        }
+        // Bước 1: Lấy username thực tế từ collection users
+        firestore.collection("users").document(currentUser.getUid()).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String userName = "Anonymous";
+                    if (documentSnapshot.exists()) {
+                        userName = documentSnapshot.getString("userName");
+                    }
+                    
+                    final String finalUserName = userName;
 
+                    // Bước 2: Xử lý upload ảnh (nếu có) và lưu bài viết
+                    if (imageUri == null) {
+                        savePostToFirestore(content, null, currentUser.getUid(), finalUserName, callback);
+                    } else {
+                        uploadImageAndSavePost(content, imageUri, currentUser.getUid(), finalUserName, callback);
+                    }
+                })
+                .addOnFailureListener(e -> callback.onError("Không thể lấy thông tin người dùng: " + e.getMessage()));
+    }
+
+    private void uploadImageAndSavePost(String content, Uri imageUri, String uid, String userName, @NonNull PostCreationCallback callback) {
         MediaManager.get().upload(imageUri)
                 .callback(new UploadCallback() {
                     @Override
                     public void onSuccess(String requestId, Map resultData) {
                         String imageUrl = (String) resultData.get("secure_url");
                         if (imageUrl != null) {
-                            savePostToFirestore(content, imageUrl, currentUser, callback);
+                            savePostToFirestore(content, imageUrl, uid, userName, callback);
                         } else {
                             callback.onError("Không thể lấy URL ảnh từ Cloudinary.");
                         }
@@ -134,10 +149,10 @@ public class PostRepository {
                 .dispatch();
     }
 
-    private void savePostToFirestore(String content, String imageUrl, FirebaseUser currentUser, @NonNull PostCreationCallback callback) {
+    private void savePostToFirestore(String content, String imageUrl, String uid, String userName, @NonNull PostCreationCallback callback) {
         Post newPost = new Post(
-                currentUser.getUid(),
-                currentUser.getDisplayName() != null ? currentUser.getDisplayName() : "Anonymous",
+                uid,
+                userName,
                 content,
                 imageUrl,
                 new Date()
