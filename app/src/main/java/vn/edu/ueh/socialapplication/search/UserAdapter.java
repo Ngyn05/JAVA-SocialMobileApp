@@ -20,17 +20,23 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
     private Context mContext;
     private List<User> mUsers;
+    private OnUserClickListener onUserClickListener;
 
-    public UserAdapter(Context mContext, List<User> mUsers) {
+    public interface OnUserClickListener {
+        void onUserClick(User user);
+    }
+
+    public UserAdapter(Context mContext, List<User> mUsers, OnUserClickListener onUserClickListener) {
         this.mContext = mContext;
         this.mUsers = mUsers;
+        this.onUserClickListener = onUserClickListener;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(mContext).inflate(R.layout.user_item, parent, false);
-        return new UserAdapter.ViewHolder(view);
+        return new ViewHolder(view);
     }
 
     @Override
@@ -42,9 +48,14 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
             ImageUtils.loadImage(user.getAvatar(), holder.imageProfile);
         } else {
-            // If no avatar, set the default placeholder icon
             holder.imageProfile.setImageResource(R.drawable.ic_account_circle);
         }
+
+        holder.itemView.setOnClickListener(v -> {
+            if (onUserClickListener != null) {
+                onUserClickListener.onUserClick(user);
+            }
+        });
     }
 
     @Override

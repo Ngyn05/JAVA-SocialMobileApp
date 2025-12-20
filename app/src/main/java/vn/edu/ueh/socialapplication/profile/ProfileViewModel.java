@@ -52,6 +52,10 @@ public class ProfileViewModel extends AndroidViewModel {
             @Override
             public void onUserLoaded(User u) {
                 user.setValue(u);
+                if (u != null) {
+                    followersCount.setValue(u.getFollowers() != null ? u.getFollowers().size() : 0);
+                    followingCount.setValue(u.getFollowing() != null ? u.getFollowing().size() : 0);
+                }
             }
 
             @Override
@@ -59,8 +63,7 @@ public class ProfileViewModel extends AndroidViewModel {
                 error.setValue("Không thể tải thông tin người dùng");
             }
         });
-        
-        loadFollowCounts(uid);
+
         checkIfFollowing(uid);
         loadPostsByUserId(uid);
     }
@@ -81,11 +84,6 @@ public class ProfileViewModel extends AndroidViewModel {
         });
     }
 
-    public void loadFollowCounts(String uid) {
-        followRepository.getFollowersCount(uid).addOnSuccessListener(followersCount::setValue);
-        followRepository.getFollowingCount(uid).addOnSuccessListener(followingCount::setValue);
-    }
-
     private void checkIfFollowing(String targetUid) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null && !currentUser.getUid().equals(targetUid)) {
@@ -99,20 +97,20 @@ public class ProfileViewModel extends AndroidViewModel {
     public void toggleFollow(String targetUid) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) return;
-        
+
         Boolean currentStatus = isFollowing.getValue();
         if (currentStatus != null && currentStatus) {
             followRepository.unfollowUser(currentUser.getUid(), targetUid)
                     .addOnSuccessListener(aVoid -> {
                         isFollowing.setValue(false);
-                        loadFollowCounts(targetUid); // Cập nhật lại số lượng ngay lập tức
+                        followersCount.setValue(followersCount.getValue() != null ? followersCount.getValue() - 1 : 0);
                     })
                     .addOnFailureListener(e -> error.setValue("Lỗi khi bỏ theo dõi"));
         } else {
             followRepository.followUser(currentUser.getUid(), targetUid)
                     .addOnSuccessListener(aVoid -> {
                         isFollowing.setValue(true);
-                        loadFollowCounts(targetUid); // Cập nhật lại số lượng ngay lập tức
+                        followersCount.setValue(followersCount.getValue() != null ? followersCount.getValue() + 1 : 1);
                     })
                     .addOnFailureListener(e -> error.setValue("Lỗi khi theo dõi"));
         }

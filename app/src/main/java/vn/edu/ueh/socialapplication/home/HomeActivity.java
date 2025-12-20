@@ -2,13 +2,8 @@ package vn.edu.ueh.socialapplication.home;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
@@ -30,7 +25,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import vn.edu.ueh.socialapplication.post.CreatePostActivity;
 import vn.edu.ueh.socialapplication.profile.EditProfileActivity;
@@ -38,7 +32,7 @@ import vn.edu.ueh.socialapplication.utils.ImageUtils;
 import vn.edu.ueh.socialapplication.auth.LoginActivity;
 import vn.edu.ueh.socialapplication.profile.ProfileActivity;
 import vn.edu.ueh.socialapplication.R;
-import vn.edu.ueh.socialapplication.search.UserAdapter;
+import vn.edu.ueh.socialapplication.search.SearchActivity;
 import vn.edu.ueh.socialapplication.data.repository.UserRepository;
 import vn.edu.ueh.socialapplication.data.model.Post;
 import vn.edu.ueh.socialapplication.data.model.User;
@@ -57,12 +51,10 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     private ImageView profileImage;
     private ImageView addPostIcon;
     private EditText searchBar;
+    private ImageView profileImage, searchIcon;
     private ProgressBar progressBar;
     private TextView noResultsText;
     private UserRepository userRepository;
-    private final Handler searchHandler = new Handler(Looper.getMainLooper());
-    private Runnable searchRunnable;
-    private static final long DEBOUNCE_DELAY = 500; // 500ms
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,15 +71,11 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         profileImage = findViewById(R.id.profile_image);
         addPostIcon = findViewById(R.id.add_post_icon);
         searchBar = findViewById(R.id.search_bar_home);
+        searchIcon = findViewById(R.id.search_icon);
         progressBar = findViewById(R.id.progress_bar_home);
         noResultsText = findViewById(R.id.no_results_text_home);
 
         userRepository = new UserRepository();
-
-        // Setup RecyclerView
-
-        userList = new ArrayList<>();
-        userAdapter = new UserAdapter(this, userList);
 
         setupListeners();
 
@@ -185,6 +173,9 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     private void setupListeners() {
         profileImage.setOnClickListener(this::showProfileMenu);
 
+        searchIcon.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, SearchActivity.class);
+            startActivity(intent);
         addPostIcon.setOnClickListener(v -> {
             startActivity(new Intent(HomeActivity.this, CreatePostActivity.class));
         });
