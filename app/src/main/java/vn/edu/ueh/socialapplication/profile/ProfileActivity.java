@@ -13,6 +13,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -39,6 +40,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
     private PostAdapter postAdapter;
     private List<Post> postList;
     private LinearLayout followersLayout, followingLayout;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     private ProfileViewModel viewModel;
     private FirebaseUser firebaseUser;
@@ -76,6 +78,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
         toolbar.setNavigationOnClickListener(v -> finish());
 
@@ -91,8 +94,9 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         toolbarTitle = findViewById(R.id.toolbar_title);
         followersLayout = findViewById(R.id.followers_layout);
         followingLayout = findViewById(R.id.following_layout);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
-        // Setup RecyclerView với LinearLayoutManager (danh sách dọc)
+        // Setup RecyclerView chuẩn Recycle
         recyclerViewPosts.setHasFixedSize(true);
         recyclerViewPosts.setLayoutManager(new LinearLayoutManager(this));
         postList = new ArrayList<>();
@@ -132,6 +136,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         });
 
         viewModel.getUserPosts().observe(this, posts -> {
+            swipeRefreshLayout.setRefreshing(false); // Dừng hiệu ứng loading
             if (posts != null) {
                 postAdapter.setPosts(posts);
                 postsCount.setText(String.valueOf(posts.size()));
@@ -139,6 +144,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         });
 
         viewModel.getError().observe(this, errorMsg -> {
+            swipeRefreshLayout.setRefreshing(false);
             if (errorMsg != null) {
                 Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show();
             }
@@ -146,6 +152,10 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
     }
 
     private void setupListeners() {
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            viewModel.loadUserProfile(profileId);
+        });
+
         btnAction.setOnClickListener(v -> {
             String btnText = btnAction.getText().toString();
             if (btnText.equals("Chỉnh sửa trang cá nhân")) {
