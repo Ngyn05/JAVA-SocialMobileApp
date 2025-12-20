@@ -48,12 +48,14 @@ public class PostRepository {
                     }
 
                     List<Post> postList = new ArrayList<>();
-                    for (DocumentSnapshot doc : value) {
-                        Post post = doc.toObject(Post.class);
-                        if (post != null) {
-                            // GÁN ID NGAY TẠI ĐÂY
-                            post.setPostId(doc.getId());
-                            postList.add(post);
+                    if (value != null) {
+                        for (DocumentSnapshot doc : value) {
+                            Post post = doc.toObject(Post.class);
+                            if (post != null) {
+                                // GÁN ID NGAY TẠI ĐÂY
+                                post.setPostId(doc.getId());
+                                postList.add(post);
+                            }
                         }
                     }
                     callback.onPostsChanged(postList);
@@ -163,6 +165,20 @@ public class PostRepository {
      */
     public Task<QuerySnapshot> getAllPosts() {
         return postsCollection
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get();
+    }
+
+    /**
+     * Lấy bài viết từ danh sách User ID (Following).
+     * Giới hạn: userIds tối đa 30 phần tử do giới hạn của Firestore 'whereIn'.
+     */
+    public Task<QuerySnapshot> getPostsByUserIds(List<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return null;
+        }
+        return postsCollection
+                .whereIn("userId", userIds)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get();
     }

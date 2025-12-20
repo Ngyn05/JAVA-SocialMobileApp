@@ -1,7 +1,8 @@
 package vn.edu.ueh.socialapplication.home;
 
 import android.content.Intent;
-import android.os.Bundle;import android.view.View;
+import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -9,21 +10,23 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.lifecycle.ViewModelProvider; // Thêm import này
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.ArrayList;
 
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.Post;
 import vn.edu.ueh.socialapplication.post.PostAdapter;
-import vn.edu.ueh.socialapplication.post.PostDetailActivity; // Sửa lại import cho gọn
+import vn.edu.ueh.socialapplication.post.PostDetailActivity;
 
 public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPostClickListener {
     private RecyclerView rvPosts;
     private PostAdapter postAdapter;
-    private HomeViewModel homeViewModel; // << 1. KHAI BÁO VIEWMODEL
+    private HomeViewModel homeViewModel;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,41 +39,48 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
             return insets;
         });
 
-        // --- ÁNH XẠ VIEW VÀ SETUP RECYCLERVIEW ---
+        // --- ÁNH XẠ VIEW ---
         rvPosts = findViewById(R.id.rvPosts);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        
         rvPosts.setLayoutManager(new LinearLayoutManager(this));
 
-        // Khởi tạo adapter với một danh sách rỗng ban đầu
+        // Khởi tạo adapter
         postAdapter = new PostAdapter(new ArrayList<>(), this);
         rvPosts.setAdapter(postAdapter);
 
-        // --- 2. KHỞI TẠO VIEWMODEL ---
+        // --- KHỞI TẠO VIEWMODEL ---
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
-        // --- 3. LẮNG NGHE DỮ LIỆU TỪ VIEWMODEL ---
-        // Xóa bỏ hoàn toàn phần tạo dữ liệu giả
+        // --- LẮNG NGHE DỮ LIỆU ---
         observeViewModel();
 
-        // --- 4. YÊU CẦU VIEWMODEL TẢI DỮ LIỆU ---
-        homeViewModel.loadFeed();
+        // --- SETUP SWIPE TO REFRESH ---
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            homeViewModel.loadFollowingFeed();
+        });
+
+        // --- TẢI DỮ LIỆU BAN ĐẦU (FOLLOWING FEED) ---
+        swipeRefreshLayout.setRefreshing(true);
+        homeViewModel.loadFollowingFeed();
     }
 
     private void observeViewModel() {
         homeViewModel.getPostsData().observe(this, posts -> {
-            // Khi ViewModel có dữ liệu mới, nó sẽ tự động gọi vào đây
+            swipeRefreshLayout.setRefreshing(false);
             if (posts != null) {
-                // Cập nhật dữ liệu cho Adapter để hiển thị lên RecyclerView
                 postAdapter.setPosts(posts);
-                // Hoặc bạn có thể thêm logic hiển thị/ẩn ProgressBar ở đây
+                if (posts.isEmpty()) {
+                    Toast.makeText(this, "Hãy follow thêm người để thấy bài viết!", Toast.LENGTH_SHORT).show();
+                }
             } else {
-                // Xử lý trường hợp có lỗi xảy ra khi tải dữ liệu
                 Toast.makeText(this, "Không thể tải danh sách bài đăng", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     @Override
-    public void onCommentClick(Post post) {    // Kiểm tra nếu postId bị null thì báo lỗi, không chuyển trang để tránh crash
+    public void onCommentClick(Post post) {
         if (post.getPostId() == null || post.getPostId().isEmpty()) {
             Toast.makeText(this, "Lỗi: Bài viết chưa có ID!", Toast.LENGTH_SHORT).show();
             return;
