@@ -1,78 +1,125 @@
 package vn.edu.ueh.socialapplication.home;
 
 import android.content.Intent;
-import android.os.Bundle;import android.view.View;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.lifecycle.ViewModelProvider; // Thêm import này
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.ArrayList;
 
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.Post;
+import vn.edu.ueh.socialapplication.post.CreatePostActivity;
 import vn.edu.ueh.socialapplication.post.PostAdapter;
-import vn.edu.ueh.socialapplication.post.PostDetailActivity; // Sửa lại import cho gọn
+import vn.edu.ueh.socialapplication.post.PostDetailActivity;
 
 public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPostClickListener {
     private RecyclerView rvPosts;
     private PostAdapter postAdapter;
-    private HomeViewModel homeViewModel; // << 1. KHAI BÁO VIEWMODEL
+    private HomeViewModel homeViewModel;
+    private ImageView btnAddPost;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private ProgressBar paginationProgressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
-        // --- ÁNH XẠ VIEW VÀ SETUP RECYCLERVIEW ---
+        setupViews();
+        setupRecyclerView();
+        setupViewModel();
+        setupListeners();
+
+        observeViewModel();
+    }
+
+    private void setupViews() {
         rvPosts = findViewById(R.id.rvPosts);
-        rvPosts.setLayoutManager(new LinearLayoutManager(this));
+        btnAddPost = findViewById(R.id.btnAddPost);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        paginationProgressBar = findViewById(R.id.pagination_progress_bar);
+    }
 
-        // Khởi tạo adapter với một danh sách rỗng ban đầu
+    private void setupRecyclerView() {
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        rvPosts.setLayoutManager(layoutManager);
         postAdapter = new PostAdapter(new ArrayList<>(), this);
         rvPosts.setAdapter(postAdapter);
+    }
 
-        // --- 2. KHỞI TẠO VIEWMODEL ---
+    private void setupViewModel() {
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
+    }
 
-        // --- 3. LẮNG NGHE DỮ LIỆU TỪ VIEWMODEL ---
-        // Xóa bỏ hoàn toàn phần tạo dữ liệu giả
-        observeViewModel();
+    private void setupListeners() {
+        btnAddPost.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, CreatePostActivity.class);
+            startActivity(intent);
+        });
 
-        // --- 4. YÊU CẦU VIEWMODEL TẢI DỮ LIỆU ---
-        homeViewModel.loadFeed();
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            homeViewModel.loadFirstPage();
+        });
+
+        rvPosts.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                if (layoutManager != null) {
+                    int visibleItemCount = layoutManager.getChildCount();
+                    int totalItemCount = layoutManager.getItemCount();
+                    int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
+
+                    if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount && firstVisibleItemPosition >= 0) {
+                        homeViewModel.loadNextPage();
+                    }
+                }
+            }
+        });
     }
 
     private void observeViewModel() {
         homeViewModel.getPostsData().observe(this, posts -> {
-            // Khi ViewModel có dữ liệu mới, nó sẽ tự động gọi vào đây
             if (posts != null) {
-                // Cập nhật dữ liệu cho Adapter để hiển thị lên RecyclerView
                 postAdapter.setPosts(posts);
-                // Hoặc bạn có thể thêm logic hiển thị/ẩn ProgressBar ở đây
-            } else {
-                // Xử lý trường hợp có lỗi xảy ra khi tải dữ liệu
-                Toast.makeText(this, "Không thể tải danh sách bài đăng", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        homeViewModel.getIsLoadingData().observe(this, isLoading -> {
+            if (isLoading != null) {
+                // Show SwipeRefresh only on initial load/refresh
+                if (swipeRefreshLayout.isRefreshing() && !isLoading) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+
+                // Show pagination progress bar only when loading next page
+                boolean isFirstPage = ((LinearLayoutManager)rvPosts.getLayoutManager()).findFirstVisibleItemPosition() == 0;
+                paginationProgressBar.setVisibility(isLoading && !swipeRefreshLayout.isRefreshing() ? View.VISIBLE : View.GONE);
+            }
+        });
+
+        homeViewModel.getErrorData().observe(this, error -> {
+            if (error != null) {
+                Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     @Override
-    public void onCommentClick(Post post) {    // Kiểm tra nếu postId bị null thì báo lỗi, không chuyển trang để tránh crash
+    public void onCommentClick(Post post) {
         if (post.getPostId() == null || post.getPostId().isEmpty()) {
-            Toast.makeText(this, "Lỗi: Bài viết chưa có ID!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Error: Post ID is missing!", Toast.LENGTH_SHORT).show();
             return;
         }
 

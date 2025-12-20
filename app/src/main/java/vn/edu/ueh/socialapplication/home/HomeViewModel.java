@@ -4,49 +4,97 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.google.firebase.firestore.DocumentSnapshot;
+
 import java.util.ArrayList;
 import java.util.List;
 
-// Import duy nhất model Post và repository của nó
 import vn.edu.ueh.socialapplication.data.model.Post;
 import vn.edu.ueh.socialapplication.data.repository.PostRepository;
 
-/**
- * ViewModel cho màn hình Home, đã được tối ưu cho cấu trúc dữ liệu denormalized.
- */
 public class HomeViewModel extends ViewModel {
 
-    private final PostRepository postRepository = new PostRepository();
+    private final PostRepository postRepository;
 
-    // LiveData bây giờ chỉ cần chứa danh sách các đối tượng Post.
-    // Vì mỗi đối tượng Post đã có sẵn `userName`.hh
     private final MutableLiveData<List<Post>> postsData = new MutableLiveData<>();
+    private final MutableLiveData<String> errorData = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> isLoadingData = new MutableLiveData<>(false);
+
+    private DocumentSnapshot lastVisiblePost = null;
+    private boolean isLastPage = false;
+    private boolean isLoading = false;
+
+    public HomeViewModel() {
+        this.postRepository = new PostRepository();
+        loadFirstPage();
+    }
 
     public LiveData<List<Post>> getPostsData() {
         return postsData;
     }
 
-    /**
-     * Tải danh sách bài đăng từ Firestore.
-     * Với cấu trúc mới, chỉ cần MỘT truy vấn duy nhất.
-     */
-    public void loadFeed() {
-        postRepository.getAllPosts().addOnSuccessListener(queryDocumentSnapshots -> {
-            List<Post> posts = new ArrayList<>();
+    public LiveData<String> getErrorData() {
+        return errorData;
+    }
 
-            // Thay vì dùng toObjects trực tiếp, ta duyệt qua từng document
-            for (com.google.firebase.firestore.DocumentSnapshot document : queryDocumentSnapshots) {
-                Post post = document.toObject(Post.class);
-                if (post != null) {
-                    // QUAN TRỌNG: Gán Document ID vào trường postId của model Post
-                    post.setPostId(document.getId());
-                    posts.add(post);
+    public LiveData<Boolean> getIsLoadingData() {
+        return isLoadingData;
+    }
+
+    public void loadFirstPage() {
+        if (isLoading) return;
+        isLoading = true;
+        isLoadingData.setValue(true);
+        lastVisiblePost = null; // Reset for refresh
+        isLastPage = false;
+
+        postRepository.getPostsPage(null, new PostRepository.PostsPageCallback() {
+            @Override
+            public void onSuccess(List<Post> posts, DocumentSnapshot lastVisible) {
+                postsData.setValue(posts);
+                lastVisiblePost = lastVisible;
+                if (posts.size() < PostRepository.PAGE_SIZE) {
+                    isLastPage = true;
                 }
+                isLoading = false;
+                isLoadingData.setValue(false);
             }
 
-            postsData.setValue(posts);
-        }).addOnFailureListener(e -> {
-            postsData.setValue(null);
+            @Override
+            public void onError(String errorMessage) {
+                errorData.setValue(errorMessage);
+                isLoading = false;
+                isLoadingData.setValue(false);
+            }
+        });
+    }
+
+    public void loadNextPage() {
+        if (isLoading || isLastPage) return;
+        isLoading = true;
+        isLoadingData.setValue(true);
+
+        postRepository.getPostsPage(lastVisiblePost, new PostRepository.PostsPageCallback() {
+            @Override
+            public void onSuccess(List<Post> newPosts, DocumentSnapshot lastVisible) {
+                List<Post> currentPosts = new ArrayList<>(postsData.getValue() != null ? postsData.getValue() : new ArrayList<>());
+                currentPosts.addAll(newPosts);
+                postsData.setValue(currentPosts);
+
+                lastVisiblePost = lastVisible;
+                if (newPosts.size() < PostRepository.PAGE_SIZE) {
+                    isLastPage = true;
+                }
+                isLoading = false;
+                isLoadingData.setValue(false);
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                errorData.setValue(errorMessage);
+                isLoading = false;
+                isLoadingData.setValue(false);
+            }
         });
     }
 }
