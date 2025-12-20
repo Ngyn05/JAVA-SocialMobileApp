@@ -32,6 +32,8 @@
         <activity android:name=".profile.EditProfileActivity" />
         <activity android:name=".auth.EmailVerificationActivity" />
         <activity android:name=".post.PostDetailActivity" />
+        <activity android:name=".search.SearchActivity" />
+        <activity android:name=".profile.OtherProfileActivity" />
     </application>
 
 </manifest>

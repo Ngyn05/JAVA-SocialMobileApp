@@ -15,13 +15,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import vn.edu.ueh.socialapplication.R;
-import vn.edu.ueh.socialapplication.search.UserAdapter;
-import vn.edu.ueh.socialapplication.data.repository.UserRepository;
 import vn.edu.ueh.socialapplication.data.model.User;
+import vn.edu.ueh.socialapplication.data.repository.UserRepository;
 import vn.edu.ueh.socialapplication.follow.FollowRepository;
 import vn.edu.ueh.socialapplication.follow.FollowViewModel;
+import vn.edu.ueh.socialapplication.search.UserAdapter;
 
-public class FollowListActivity extends AppCompatActivity {
+public class FollowListActivity extends AppCompatActivity implements UserAdapter.OnUserClickListener {
 
     private String id;
     private String title;
@@ -65,7 +65,7 @@ public class FollowListActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         userList = new ArrayList<>();
-        userAdapter = new UserAdapter(this, userList);
+        userAdapter = new UserAdapter(this, userList, this);
         recyclerView.setAdapter(userAdapter);
 
         idList = new ArrayList<>();
@@ -93,5 +93,12 @@ public class FollowListActivity extends AppCompatActivity {
                 userAdapter.notifyDataSetChanged();
             });
         }
+    }
+
+    @Override
+    public void onUserClick(User user) {
+        Intent intent = new Intent(this, OtherProfileActivity.class);
+        intent.putExtra("USER_ID", user.getUserId());
+        startActivity(intent);
     }
 }
