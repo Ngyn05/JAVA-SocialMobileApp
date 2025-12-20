@@ -40,6 +40,9 @@ public class UserRepository {
                         DocumentSnapshot document = task.getResult();
                         if (document != null && document.exists()) {
                             User user = document.toObject(User.class);
+                            if (user != null) {
+                                user.setUserId(document.getId());
+                            }
                             listener.onUserLoaded(user);
                         } else {
                             listener.onError(new Exception("User not found"));
@@ -85,19 +88,24 @@ public class UserRepository {
         Task<QuerySnapshot> userIdTask = queryByUserId.get();
 
         Tasks.whenAllSuccess(userNameTask, userIdTask).addOnSuccessListener(results -> {
-            // Use a LinkedHashMap to maintain order and remove duplicates based on document ID
             Map<String, User> userMap = new LinkedHashMap<>();
 
-            // Process username results
             QuerySnapshot userNameSnapshot = (QuerySnapshot) results.get(0);
             for (DocumentSnapshot doc : userNameSnapshot.getDocuments()) {
-                userMap.put(doc.getId(), doc.toObject(User.class));
+                User user = doc.toObject(User.class);
+                if (user != null) {
+                    user.setUserId(doc.getId());
+                    userMap.put(doc.getId(), user);
+                }
             }
 
-            // Process userId results
             QuerySnapshot userIdSnapshot = (QuerySnapshot) results.get(1);
             for (DocumentSnapshot doc : userIdSnapshot.getDocuments()) {
-                userMap.put(doc.getId(), doc.toObject(User.class));
+                User user = doc.toObject(User.class);
+                if (user != null) {
+                    user.setUserId(doc.getId());
+                    userMap.put(doc.getId(), user);
+                }
             }
 
             listener.onUsersSearched(new ArrayList<>(userMap.values()));
