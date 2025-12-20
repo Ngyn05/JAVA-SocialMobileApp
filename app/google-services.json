@@ -12,7 +12,20 @@
           "package_name": "vn.edu.ueh.socialapplication"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "422161695354-o707l3429fbkib0ekh8fkp253d80jk8n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "vn.edu.ueh.socialapplication",
+            "certificate_hash": "b61277d9a2244dd24545f6e43aa494e66d45377e"
+          }
+        },
+        {
+          "client_id": "422161695354-bcctfr10vc6tcdhqiscoa2ekqm6vnhcq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBgg3pF18h1Q0LVCTsvjvMcKgW-7AZy3e0"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "422161695354-bcctfr10vc6tcdhqiscoa2ekqm6vnhcq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

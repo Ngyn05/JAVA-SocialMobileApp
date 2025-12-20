@@ -32,6 +32,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -46,6 +47,7 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private GoogleSignInClient mGoogleSignInClient;
+    private UserRepository userRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +65,7 @@ public class LoginActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        userRepository = new UserRepository();
 
         // Configure Google Sign In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -93,12 +96,10 @@ public class LoginActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null && user.isEmailVerified()) {
-                            // Email is verified, proceed to home
                             navigateToHome();
                         } else {
-                            // Email is not verified
                             Toast.makeText(LoginActivity.this, "Vui lòng xác thực email của bạn trước khi đăng nhập.", Toast.LENGTH_LONG).show();
-                            mAuth.signOut(); // Sign out to prevent inconsistent state
+                            mAuth.signOut();
                         }
                     } else {
                         Toast.makeText(LoginActivity.this, "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.", Toast.LENGTH_LONG).show();
@@ -145,30 +146,62 @@ public class LoginActivity extends AppCompatActivity {
             if (task.isSuccessful()) {
                 DocumentSnapshot document = task.getResult();
                 if (!document.exists()) {
-                    // New user, save data to Firestore
-                    Map<String, Object> user = new HashMap<>();
-                    user.put("userName", firebaseUser.getDisplayName());
-                    user.put("userId", ""); // User can set this custom ID later
-                    user.put("email", firebaseUser.getEmail());
-                    user.put("avatar", firebaseUser.getPhotoUrl() != null ? firebaseUser.getPhotoUrl().toString() : "");
-                    user.put("bio", "");
-
-                    db.collection("users").document(authUid).set(user)
-                            .addOnCompleteListener(saveTask -> {
-                                if (saveTask.isSuccessful()) {
-                                    navigateToHome();
-                                } else {
-                                    Toast.makeText(LoginActivity.this, "Lưu dữ liệu người dùng thất bại.", Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                    // This is a new user, create a profile in Firestore
+                    generateUniqueUserIdAndSave(firebaseUser);
                 } else {
-                    // Existing user
+                    // Existing user, just navigate to home
                     navigateToHome();
                 }
             } else {
                 Toast.makeText(LoginActivity.this, "Lỗi khi kiểm tra dữ liệu người dùng.", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void generateUniqueUserIdAndSave(FirebaseUser firebaseUser) {
+        String email = firebaseUser.getEmail();
+        String baseUserId = "";
+        if (email != null && email.contains("@")) {
+            baseUserId = email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        }
+
+        // Check if this baseUserId is already taken
+        String finalBaseUserId = baseUserId;
+        userRepository.checkUserIdExists(baseUserId, new UserRepository.OnUserIdCheckListener() {
+            @Override
+            public void onResult(boolean isTaken) {
+                String finalUserId = finalBaseUserId;
+                if (isTaken) {
+                    // If taken, append a random number
+                    finalUserId = finalBaseUserId + new Random().nextInt(1000);
+                }
+                saveNewUserData(firebaseUser, finalUserId);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                // If checking fails, proceed with a potentially non-unique ID
+                saveNewUserData(firebaseUser, finalBaseUserId);
+            }
+        });
+    }
+
+    private void saveNewUserData(FirebaseUser firebaseUser, String finalUserId) {
+        Map<String, Object> user = new HashMap<>();
+        user.put("userName", firebaseUser.getDisplayName());
+        user.put("userId", finalUserId);
+        user.put("email", firebaseUser.getEmail());
+        user.put("avatar", firebaseUser.getPhotoUrl() != null ? firebaseUser.getPhotoUrl().toString() : "");
+        user.put("bio", "");
+
+        db.collection("users").document(firebaseUser.getUid()).set(user)
+                .addOnCompleteListener(saveTask -> {
+                    if (saveTask.isSuccessful()) {
+                        navigateToHome();
+                    } else {
+                        Toast.makeText(LoginActivity.this, "Lưu dữ liệu người dùng thất bại.", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void navigateToHome() {
