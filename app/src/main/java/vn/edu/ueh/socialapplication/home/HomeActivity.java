@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import vn.edu.ueh.socialapplication.post.CreatePostActivity;
 import vn.edu.ueh.socialapplication.profile.EditProfileActivity;
@@ -46,12 +47,9 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     private SwipeRefreshLayout swipeRefreshLayout;
     private LinearLayoutManager layoutManager;
 
-    private UserAdapter userAdapter;
-    private List<User> userList;
     private ImageView profileImage;
     private ImageView addPostIcon;
-    private EditText searchBar;
-    private ImageView profileImage, searchIcon;
+    private ImageView searchIcon;
     private ProgressBar progressBar;
     private TextView noResultsText;
     private UserRepository userRepository;
@@ -61,23 +59,24 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        
+        View mainView = findViewById(R.id.main);
+        if (mainView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                return insets;
+            });
+        }
 
         // Initialize views
         profileImage = findViewById(R.id.profile_image);
         addPostIcon = findViewById(R.id.add_post_icon);
-        searchBar = findViewById(R.id.search_bar_home);
         searchIcon = findViewById(R.id.search_icon);
         progressBar = findViewById(R.id.progress_bar_home);
         noResultsText = findViewById(R.id.no_results_text_home);
 
         userRepository = new UserRepository();
-
-        setupListeners();
 
         // --- ÁNH XẠ VIEW ---
         rvPosts = findViewById(R.id.rvPosts);
@@ -95,6 +94,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
 
         // --- LẮNG NGHE DỮ LIỆU ---
         observeViewModel();
+        setupListeners();
 
         // --- SETUP SWIPE TO REFRESH ---
         swipeRefreshLayout.setOnRefreshListener(() -> {
@@ -107,16 +107,13 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 
-                // dy > 0 nghĩa là đang cuộn xuống
                 if (dy > 0) {
                     int visibleItemCount = layoutManager.getChildCount();
                     int totalItemCount = layoutManager.getItemCount();
                     int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
 
-                    // Kiểm tra nếu đã cuộn gần đến cuối (còn 2 item nữa là hết)
                     if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - 2
                             && firstVisibleItemPosition >= 0) {
-                        Log.d("HomeActivity", "Cuộn đến cuối, đang tải thêm...");
                         homeViewModel.loadMore();
                     }
                 }
@@ -136,8 +133,6 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         });
 
         homeViewModel.getIsLoading().observe(this, isLoading -> {
-            // Chỉ hiển thị loading ở SwipeRefresh khi đang refresh (trang đầu)
-            // Nếu là load more, bạn có thể thêm một ProgressBar ở dưới cùng RecyclerView
             if (isLoading && layoutManager.findFirstVisibleItemPosition() <= 0) {
                 swipeRefreshLayout.setRefreshing(true);
             } else if (!isLoading) {
@@ -171,68 +166,22 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     }
 
     private void setupListeners() {
-        profileImage.setOnClickListener(this::showProfileMenu);
-
-        searchIcon.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, SearchActivity.class);
-            startActivity(intent);
-        addPostIcon.setOnClickListener(v -> {
-            startActivity(new Intent(HomeActivity.this, CreatePostActivity.class));
-        });
-
-        searchBar.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (searchRunnable != null) {
-                    searchHandler.removeCallbacks(searchRunnable);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                searchRunnable = () -> searchUsers(s.toString());
-                searchHandler.postDelayed(searchRunnable, DEBOUNCE_DELAY);
-            }
-        });
-    }
-
-    private void searchUsers(String query) {
-        if (query.isEmpty()) {
-            userList.clear();
-            userAdapter.notifyDataSetChanged();
-            noResultsText.setVisibility(View.GONE);
-            progressBar.setVisibility(View.GONE);
-            return;
+        if (profileImage != null) {
+            profileImage.setOnClickListener(this::showProfileMenu);
         }
 
-        progressBar.setVisibility(View.VISIBLE);
-        noResultsText.setVisibility(View.GONE);
-
-        userRepository.searchUsers(query, new UserRepository.OnUsersSearchedListener() {
-            @Override
-            public void onUsersSearched(List<User> users) {
-                progressBar.setVisibility(View.GONE);
-                userList.clear();
-                userList.addAll(users);
-                userAdapter.notifyDataSetChanged();
-
-                if (users.isEmpty()) {
-                    noResultsText.setVisibility(View.VISIBLE);
-                } else {
-                    noResultsText.setVisibility(View.GONE);
-                }
-            }
-
-            @Override
-            public void onError(Exception e) {
-                progressBar.setVisibility(View.GONE);
-                noResultsText.setVisibility(View.VISIBLE);
-                noResultsText.setText("Lỗi khi tìm kiếm.");
-            }
-        });
+        if (searchIcon != null) {
+            searchIcon.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, SearchActivity.class);
+                startActivity(intent);
+            });
+        }
+        
+        if (addPostIcon != null) {
+            addPostIcon.setOnClickListener(v -> {
+                startActivity(new Intent(HomeActivity.this, CreatePostActivity.class));
+            });
+        }
     }
 
     private void showProfileMenu(View v) {
@@ -275,8 +224,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
 
                 @Override
                 public void onError(Exception e) {
-                    Toast.makeText(vn.edu.ueh.socialapplication.home.HomeActivity.this, "Không tìm thấy hồ sơ người dùng. Đang đăng xuất.", Toast.LENGTH_LONG).show();
-                    logoutUser();
+                    Toast.makeText(HomeActivity.this, "Không tìm thấy hồ sơ người dùng.", Toast.LENGTH_LONG).show();
                 }
             });
         }
@@ -285,7 +233,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     private void updateUI(User user) {
         if (user != null && user.getAvatar() != null && !user.getAvatar().isEmpty()) {
             ImageUtils.loadImage(user.getAvatar(), profileImage);
-        } else {
+        } else if (profileImage != null) {
             profileImage.setImageResource(R.drawable.ic_account_circle);
         }
     }
