@@ -1,8 +1,12 @@
 package vn.edu.ueh.socialapplication.data.model;
 
+import com.google.firebase.firestore.DocumentId;
+
 import java.util.List;
 
 public class User {
+    @DocumentId
+    private String uid;
     private String userId;
     private String userName;
     private String email;
@@ -15,6 +19,9 @@ public class User {
     public User() {}
 
     // Getters and setters
+    public String getUid() { return uid; }
+    public void setUid(String uid) { this.uid = uid; }
+
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
 

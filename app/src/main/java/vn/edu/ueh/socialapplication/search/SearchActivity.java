@@ -129,7 +129,7 @@ public class SearchActivity extends AppCompatActivity implements UserAdapter.OnU
     @Override
     public void onUserClick(User user) {
         Intent intent = new Intent(this, OtherProfileActivity.class);
-        intent.putExtra("USER_ID", user.getUserId());
+        intent.putExtra("USER_ID", user.getUid());
         startActivity(intent);
     }
 }

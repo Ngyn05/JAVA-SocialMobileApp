@@ -54,9 +54,6 @@ public class UserRepository {
                         DocumentSnapshot document = task.getResult();
                         if (document != null && document.exists()) {
                             User user = document.toObject(User.class);
-                            if (user != null) {
-                                user.setUserId(document.getId());
-                            }
                             listener.onUserLoaded(user);
                         } else {
                             listener.onError(new Exception("User not found"));
@@ -76,14 +73,7 @@ public class UserRepository {
         db.collection("users").whereIn(FieldPath.documentId(), userIds).get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        List<User> users = new ArrayList<>();
-                        for (DocumentSnapshot document : task.getResult()) {
-                            User user = document.toObject(User.class);
-                            if (user != null) {
-                                user.setUserId(document.getId());
-                                users.add(user);
-                            }
-                        }
+                        List<User> users = task.getResult().toObjects(User.class);
                         listener.onUsersLoaded(users);
                     } else {
                         listener.onError(task.getException());
@@ -133,7 +123,6 @@ public class UserRepository {
                 if (doc.getId().equals(currentUserId)) continue; // Skip current user
                 User user = doc.toObject(User.class);
                 if (user != null) {
-                    user.setUserId(doc.getId());
                     userMap.put(doc.getId(), user);
                 }
             }
@@ -143,7 +132,6 @@ public class UserRepository {
                 if (doc.getId().equals(currentUserId)) continue; // Skip current user
                 User user = doc.toObject(User.class);
                 if (user != null) {
-                    user.setUserId(doc.getId());
                     userMap.put(doc.getId(), user);
                 }
             }
