@@ -26,6 +26,7 @@ import java.util.List;
 import de.hdodenhof.circleimageview.CircleImageView;
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.Post;
+import vn.edu.ueh.socialapplication.data.model.User;
 import vn.edu.ueh.socialapplication.post.EditPostActivity;
 import vn.edu.ueh.socialapplication.post.PostAdapter;
 import vn.edu.ueh.socialapplication.post.PostDetailActivity;
@@ -46,6 +47,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
     private ProfileViewModel viewModel;
     private FirebaseUser firebaseUser;
     private String profileId;
+    private User currentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,6 +113,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
     private void observeViewModel() {
         viewModel.getUser().observe(this, user -> {
             if (user != null) {
+                currentUser = user;
                 if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
                     ImageUtils.loadImage(user.getAvatar(), imageProfile);
                 }
@@ -171,6 +174,24 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
                 startActivity(new Intent(ProfileActivity.this, EditProfileActivity.class));
             } else {
                 viewModel.toggleFollow(profileId);
+            }
+        });
+
+        followersLayout.setOnClickListener(v -> {
+            if (currentUser != null && currentUser.getFollowers() != null && !currentUser.getFollowers().isEmpty()) {
+                Intent intent = new Intent(this, FollowListActivity.class);
+                intent.putExtra("title", "Followers");
+                intent.putStringArrayListExtra("userIds", new ArrayList<>(currentUser.getFollowers()));
+                startActivity(intent);
+            }
+        });
+
+        followingLayout.setOnClickListener(v -> {
+            if (currentUser != null && currentUser.getFollowing() != null && !currentUser.getFollowing().isEmpty()) {
+                Intent intent = new Intent(this, FollowListActivity.class);
+                intent.putExtra("title", "Following");
+                intent.putStringArrayListExtra("userIds", new ArrayList<>(currentUser.getFollowing()));
+                startActivity(intent);
             }
         });
 

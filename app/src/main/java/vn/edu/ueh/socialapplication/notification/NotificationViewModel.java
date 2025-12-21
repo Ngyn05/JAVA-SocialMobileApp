@@ -48,4 +48,8 @@ public class NotificationViewModel extends ViewModel {
             });
         }
     }
+
+    public void markNotificationsAsRead() {
+        notificationRepository.markNotificationsAsRead();
+    }
 }

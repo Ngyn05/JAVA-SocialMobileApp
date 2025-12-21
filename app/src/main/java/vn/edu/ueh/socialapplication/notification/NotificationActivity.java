@@ -40,6 +40,7 @@ public class NotificationActivity extends AppCompatActivity {
 
         observeViewModel();
         notificationViewModel.fetchNotifications();
+        notificationViewModel.markNotificationsAsRead();
     }
 
     private void observeViewModel() {

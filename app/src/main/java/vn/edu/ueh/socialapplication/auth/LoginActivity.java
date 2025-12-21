@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -205,10 +206,37 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void navigateToHome() {
+        getAndStoreFcmToken();
         Toast.makeText(LoginActivity.this, "Đăng nhập thành công.", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private void getAndStoreFcmToken() {
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Log.w(TAG, "Fetching FCM registration token failed", task.getException());
+                        return;
+                    }
+
+                    // Get new FCM registration token
+                    String token = task.getResult();
+
+                    // Log and toast
+                    String msg = "FCM Registration Token: " + token;
+                    Log.d(TAG, msg);
+
+                    // Save the token to Firestore
+                    FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                    if (firebaseUser != null) {
+                        db.collection("users").document(firebaseUser.getUid())
+                                .update("fcmToken", token)
+                                .addOnSuccessListener(aVoid -> Log.d(TAG, "FCM token updated successfully"))
+                                .addOnFailureListener(e -> Log.w(TAG, "Error updating FCM token", e));
+                    }
+                });
     }
 }

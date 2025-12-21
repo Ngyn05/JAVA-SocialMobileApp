@@ -16,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +40,7 @@ public class SearchActivity extends AppCompatActivity implements UserAdapter.OnU
     private UserRepository userRepository;
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
+    private String currentUserId;
     private static final long DEBOUNCE_DELAY = 500; // 500ms delay
 
     @Override
@@ -54,6 +57,7 @@ public class SearchActivity extends AppCompatActivity implements UserAdapter.OnU
         noResultsText = findViewById(R.id.no_results_text);
 
         userRepository = new UserRepository();
+        currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         // Setup RecyclerView
         recyclerView.setHasFixedSize(true);
@@ -98,7 +102,7 @@ public class SearchActivity extends AppCompatActivity implements UserAdapter.OnU
         progressBar.setVisibility(View.VISIBLE);
         noResultsText.setVisibility(View.GONE);
 
-        userRepository.searchUsers(query, new UserRepository.OnUsersSearchedListener() {
+        userRepository.searchUsers(query, currentUserId, new UserRepository.OnUsersSearchedListener() {
             @Override
             public void onUsersSearched(List<User> users) {
                 progressBar.setVisibility(View.GONE);

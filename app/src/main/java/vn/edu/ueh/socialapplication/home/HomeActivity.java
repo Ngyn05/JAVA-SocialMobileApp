@@ -1,6 +1,7 @@
 package vn.edu.ueh.socialapplication.home;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -24,6 +25,10 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 
@@ -56,6 +61,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     private ProgressBar progressBar;
     private TextView noResultsText;
     private UserRepository userRepository;
+    private ListenerRegistration notificationListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -178,6 +184,15 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     protected void onResume() {
         super.onResume();
         loadCurrentUser();
+        listenForNotifications();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (notificationListener != null) {
+            notificationListener.remove();
+        }
     }
 
     private void setupListeners() {
@@ -256,6 +271,28 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
             ImageUtils.loadImage(user.getAvatar(), profileImage);
         } else if (profileImage != null) {
             profileImage.setImageResource(R.drawable.ic_account_circle);
+        }
+    }
+
+    private void listenForNotifications() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            Query query = FirebaseFirestore.getInstance().collection("notifications")
+                    .whereEqualTo("userId", currentUser.getUid())
+                    .whereEqualTo("read", false);
+
+            notificationListener = query.addSnapshotListener((snapshots, e) -> {
+                if (e != null) {
+                    Log.w("HomeActivity", "Listen failed.", e);
+                    return;
+                }
+
+                if (snapshots != null && !snapshots.isEmpty()) {
+                    notificationIcon.setColorFilter(Color.RED);
+                } else {
+                    notificationIcon.clearColorFilter();
+                }
+            });
         }
     }
 }
