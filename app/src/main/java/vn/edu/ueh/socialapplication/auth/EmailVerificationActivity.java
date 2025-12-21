@@ -31,6 +31,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
 
     private static final String TAG = "EmailVerification";
     private static final int COOLDOWN_SECONDS = 30;
+    private long lastRequestTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +56,7 @@ public class EmailVerificationActivity extends AppCompatActivity {
             if (user != null) {
                 user.delete();
             }
-            finish(); 
+            finish();
         });
 
         handler = new Handler(Looper.getMainLooper());
@@ -89,6 +90,9 @@ public class EmailVerificationActivity extends AppCompatActivity {
                     saveUserDataToFirestore();
                 }
             });
+        } else {
+            // User might have been deleted, stop checking
+            handler.removeCallbacks(verificationChecker);
         }
     }
 
@@ -115,21 +119,35 @@ public class EmailVerificationActivity extends AppCompatActivity {
     }
 
     private void resendVerificationEmail() {
-        FirebaseUser user = mAuth.getCurrentUser();
-        if (user != null) {
-            resendEmailButton.setEnabled(false);
-            user.sendEmailVerification().addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    Toast.makeText(EmailVerificationActivity.this, "Email xác thực đã được gửi lại.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Log.e(TAG, "sendEmailVerification failed", task.getException());
-                    Toast.makeText(EmailVerificationActivity.this, "Không thể gửi lại email, vui lòng thử lại sau ít phút.", Toast.LENGTH_LONG).show();
-                }
-                // Re-enable the button after a cooldown period
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    resendEmailButton.setEnabled(true);
-                }, COOLDOWN_SECONDS * 1000);
-            });
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastRequestTime < COOLDOWN_SECONDS * 1000) {
+            Toast.makeText(this, "Vui lòng đợi " + COOLDOWN_SECONDS + " giây trước khi thử lại.", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "Phiên làm việc đã hết hạn. Vui lòng đăng ký lại.", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(this, RegisterActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
+        resendEmailButton.setEnabled(false);
+        lastRequestTime = currentTime;
+
+        user.sendEmailVerification().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                Toast.makeText(EmailVerificationActivity.this, "Email xác thực đã được gửi lại.", Toast.LENGTH_SHORT).show();
+            } else {
+                Log.e(TAG, "sendEmailVerification failed", task.getException());
+                Toast.makeText(EmailVerificationActivity.this, "Không thể gửi lại email, vui lòng thử lại sau ít phút.", Toast.LENGTH_LONG).show();
+            }
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                resendEmailButton.setEnabled(true);
+            }, COOLDOWN_SECONDS * 1000);
+        });
     }
 }

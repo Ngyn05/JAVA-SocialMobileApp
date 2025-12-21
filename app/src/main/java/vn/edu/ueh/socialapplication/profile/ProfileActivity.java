@@ -3,7 +3,7 @@ package vn.edu.ueh.socialapplication.profile;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ImageButton; // Thêm import này
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -26,7 +26,8 @@ import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import vn.edu.ueh.socialapplication.R;
-import vn.edu.ueh.socialapplication.chat.ChatActivity; // Thêm import này
+import vn.edu.ueh.socialapplication.auth.LoginActivity;
+import vn.edu.ueh.socialapplication.chat.ChatActivity;
 import vn.edu.ueh.socialapplication.data.model.Post;
 import vn.edu.ueh.socialapplication.data.model.User;
 import vn.edu.ueh.socialapplication.post.EditPostActivity;
@@ -40,7 +41,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
     private TextView postsCount, followersCount, followingCount, fullname, bio, toolbarTitle;
     private MaterialButton btnAction;
     private ImageView optionsMenu;
-    private ImageButton btnChat; // Khai báo ImageButton
+    private ImageButton btnChat;
     private RecyclerView recyclerViewPosts;
     private PostAdapter postAdapter;
     private List<Post> postList;
@@ -59,15 +60,25 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
 
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
 
+        if (firebaseUser == null) {
+            Toast.makeText(this, "Bạn cần đăng nhập để xem trang cá nhân.", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         Intent intent = getIntent();
         profileId = intent.getStringExtra("uid");
         if (profileId == null) {
-            if (firebaseUser != null) {
-                profileId = firebaseUser.getUid();
-            } else {
-                finish();
-                return;
-            }
+            profileId = firebaseUser.getUid();
+        }
+
+        if (profileId == null || profileId.isEmpty()) {
+            Toast.makeText(this, "Không thể tải hồ sơ, ID người dùng không hợp lệ.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
         }
 
         viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
@@ -96,7 +107,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         bio = findViewById(R.id.bio);
         btnAction = findViewById(R.id.btn_action);
         optionsMenu = findViewById(R.id.options_menu);
-        btnChat = findViewById(R.id.btn_chat); // Khởi tạo ImageButton
+        btnChat = findViewById(R.id.btn_chat);
         recyclerViewPosts = findViewById(R.id.recycler_view_posts);
         toolbarTitle = findViewById(R.id.toolbar_title);
         followersLayout = findViewById(R.id.followers_layout);
@@ -109,11 +120,11 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         postAdapter = new PostAdapter(this, postList, this);
         recyclerViewPosts.setAdapter(postAdapter);
 
-        if (firebaseUser != null && !profileId.equals(firebaseUser.getUid())) {
+        if (!profileId.equals(firebaseUser.getUid())) {
             optionsMenu.setVisibility(View.GONE);
-            btnChat.setVisibility(View.VISIBLE); // Hiển thị nút chat nếu không phải profile của mình
+            btnChat.setVisibility(View.VISIBLE);
         } else {
-            btnChat.setVisibility(View.GONE); // Ẩn nút chat nếu là profile của mình
+            btnChat.setVisibility(View.GONE);
         }
     }
 
@@ -134,7 +145,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         viewModel.getFollowingCount().observe(this, count -> followingCount.setText(String.valueOf(count)));
 
         viewModel.getIsFollowing().observe(this, isFollowing -> {
-            if (firebaseUser != null && profileId.equals(firebaseUser.getUid())) {
+            if (profileId.equals(firebaseUser.getUid())) {
                 btnAction.setText("Chỉnh sửa trang cá nhân");
             } else {
                 if (isFollowing) {
@@ -159,7 +170,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
                 Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
-        
+
         viewModel.getDeletePostStatus().observe(this, isSuccess -> {
             if (isSuccess != null && isSuccess) {
                 Toast.makeText(this, "Post deleted", Toast.LENGTH_SHORT).show();
@@ -184,7 +195,6 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
             }
         });
 
-        // Thêm listener cho nút chat
         btnChat.setOnClickListener(v -> {
             if (currentUser != null) {
                 Intent intent = new Intent(ProfileActivity.this, ChatActivity.class);
@@ -225,7 +235,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         intent.putExtra("post_object", post);
         startActivity(intent);
     }
-    
+
     @Override
     public void onEditClick(Post post) {
         Intent intent = new Intent(this, EditPostActivity.class);

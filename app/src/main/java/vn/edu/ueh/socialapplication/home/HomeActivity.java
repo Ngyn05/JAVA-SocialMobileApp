@@ -28,25 +28,24 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 
+import vn.edu.ueh.socialapplication.R;
+import vn.edu.ueh.socialapplication.auth.LoginActivity;
 import vn.edu.ueh.socialapplication.chat.ChatListActivity;
+import vn.edu.ueh.socialapplication.data.model.Post;
+import vn.edu.ueh.socialapplication.data.model.User;
+import vn.edu.ueh.socialapplication.data.repository.UserRepository;
 import vn.edu.ueh.socialapplication.notification.NotificationActivity;
 import vn.edu.ueh.socialapplication.post.CreatePostActivity;
 import vn.edu.ueh.socialapplication.post.EditPostActivity;
-import vn.edu.ueh.socialapplication.profile.EditProfileActivity;
-import vn.edu.ueh.socialapplication.utils.ImageUtils;
-import vn.edu.ueh.socialapplication.auth.LoginActivity;
-import vn.edu.ueh.socialapplication.profile.ProfileActivity;
-import vn.edu.ueh.socialapplication.R;
-import vn.edu.ueh.socialapplication.search.SearchActivity;
-import vn.edu.ueh.socialapplication.data.repository.UserRepository;
-import vn.edu.ueh.socialapplication.data.model.Post;
-import vn.edu.ueh.socialapplication.data.model.User;
 import vn.edu.ueh.socialapplication.post.PostAdapter;
 import vn.edu.ueh.socialapplication.post.PostDetailActivity;
+import vn.edu.ueh.socialapplication.profile.EditProfileActivity;
+import vn.edu.ueh.socialapplication.profile.ProfileActivity;
+import vn.edu.ueh.socialapplication.search.SearchActivity;
+import vn.edu.ueh.socialapplication.utils.ImageUtils;
 
 public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPostClickListener {
     private RecyclerView rvPosts;
@@ -70,7 +69,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
-        
+
         View mainView = findViewById(R.id.main);
         if (mainView != null) {
             ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
@@ -89,28 +88,28 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         noResultsText = findViewById(R.id.no_results_text_home);
 
         userRepository = new UserRepository();
-        
+
         rvPosts = findViewById(R.id.rvPosts);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-        
+
         layoutManager = new LinearLayoutManager(this);
         rvPosts.setLayoutManager(layoutManager);
-        
+
         postAdapter = new PostAdapter(this, new ArrayList<>(), this);
         rvPosts.setAdapter(postAdapter);
-        
+
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
-        
+
         observeViewModel();
         setupListeners();
-        
+
         swipeRefreshLayout.setOnRefreshListener(() -> homeViewModel.refreshFeed());
-        
+
         rvPosts.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                
+
                 if (dy > 0) {
                     int visibleItemCount = layoutManager.getChildCount();
                     int totalItemCount = layoutManager.getItemCount();
@@ -123,7 +122,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
                 }
             }
         });
-        
+
         swipeRefreshLayout.setRefreshing(true);
         homeViewModel.refreshFeed();
     }
@@ -142,7 +141,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
                 swipeRefreshLayout.setRefreshing(false);
             }
         });
-        
+
         homeViewModel.getDeletePostStatus().observe(this, isSuccess -> {
             if (isSuccess != null && isSuccess) {
                 Toast.makeText(this, "Post deleted", Toast.LENGTH_SHORT).show();
@@ -164,7 +163,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         intent.putExtra("post_object", post);
         startActivity(intent);
     }
-    
+
     @Override
     public void onEditClick(Post post) {
         Intent intent = new Intent(this, EditPostActivity.class);
@@ -176,11 +175,11 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     @Override
     public void onDeleteClick(Post post) {
         new AlertDialog.Builder(this)
-            .setTitle("Delete Post")
-            .setMessage("Are you sure you want to delete this post?")
-            .setPositiveButton("Delete", (dialog, which) -> homeViewModel.deletePost(post.getPostId()))
-            .setNegativeButton("Cancel", null)
-            .show();
+                .setTitle("Delete Post")
+                .setMessage("Are you sure you want to delete this post?")
+                .setPositiveButton("Delete", (dialog, which) -> homeViewModel.deletePost(post.getPostId()))
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override
@@ -209,7 +208,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
                 startActivity(intent);
             });
         }
-        
+
         if (addPostIcon != null) {
             addPostIcon.setOnClickListener(v -> {
                 startActivity(new Intent(HomeActivity.this, CreatePostActivity.class));
@@ -234,6 +233,14 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         popup.getMenuInflater().inflate(R.menu.profile_menu, popup.getMenu());
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser == null) {
+                // Redirect to login if user is not authenticated
+                startActivity(new Intent(this, LoginActivity.class));
+                finish();
+                return true;
+            }
+
             if (itemId == R.id.menu_profile) {
                 startActivity(new Intent(this, ProfileActivity.class));
                 return true;
