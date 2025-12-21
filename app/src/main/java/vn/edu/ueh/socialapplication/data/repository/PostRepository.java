@@ -42,6 +42,11 @@ public class PostRepository {
         void onError(String errorMessage);
     }
 
+    public interface PostUpdateCallback {
+        void onSuccess();
+        void onError(String errorMessage);
+    }
+
     public PostRepository(Context context) {
         this.firestore = FirebaseFirestore.getInstance();
         this.postsCollection = firestore.collection("posts");
@@ -166,5 +171,12 @@ public class PostRepository {
                             .addOnFailureListener(e -> callback.onError("Lỗi cập nhật ID."));
                 })
                 .addOnFailureListener(e -> callback.onError("Lỗi lưu Firestore."));
+    }
+
+    public void updatePost(String postId, String content, @NonNull PostUpdateCallback callback) {
+        postsCollection.document(postId)
+                .update("content", content)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onError("Error updating post"));
     }
 }

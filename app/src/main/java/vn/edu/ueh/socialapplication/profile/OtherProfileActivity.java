@@ -8,6 +8,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
@@ -22,6 +23,7 @@ import java.util.List;
 import de.hdodenhof.circleimageview.CircleImageView;
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.Post;
+import vn.edu.ueh.socialapplication.post.EditPostActivity;
 import vn.edu.ueh.socialapplication.post.PostAdapter;
 import vn.edu.ueh.socialapplication.post.PostDetailActivity;
 import vn.edu.ueh.socialapplication.utils.ImageUtils;
@@ -84,7 +86,7 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
         recyclerViewPosts.setHasFixedSize(true);
         recyclerViewPosts.setLayoutManager(new LinearLayoutManager(this));
         postList = new ArrayList<>();
-        postAdapter = new PostAdapter(postList, this);
+        postAdapter = new PostAdapter(this, postList, this);
         recyclerViewPosts.setAdapter(postAdapter);
     }
 
@@ -115,11 +117,19 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
                 Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
+        
+        viewModel.getDeletePostStatus().observe(this, isSuccess -> {
+            if (isSuccess != null && isSuccess) {
+                Toast.makeText(this, "Post deleted", Toast.LENGTH_SHORT).show();
+                viewModel.loadUserProfile(profileId);
+            } else if (isSuccess != null) {
+                Toast.makeText(this, "Failed to delete post", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setupListeners() {
         backButton.setOnClickListener(v -> finish());
-        // The follow button has no function
     }
 
     @Override
@@ -127,5 +137,23 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
         Intent intent = new Intent(OtherProfileActivity.this, PostDetailActivity.class);
         intent.putExtra("post_object", post);
         startActivity(intent);
+    }
+    
+    @Override
+    public void onEditClick(Post post) {
+        Intent intent = new Intent(this, EditPostActivity.class);
+        intent.putExtra("post_id", post.getPostId());
+        intent.putExtra("post_content", post.getContent());
+        startActivity(intent);
+    }
+
+    @Override
+    public void onDeleteClick(Post post) {
+        new AlertDialog.Builder(this)
+            .setTitle("Delete Post")
+            .setMessage("Are you sure you want to delete this post?")
+            .setPositiveButton("Delete", (dialog, which) -> viewModel.deletePost(post.getPostId()))
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 }

@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ public class ProfileViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean> isFollowing = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<List<Post>> userPosts = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> deletePostStatus = new MutableLiveData<>();
 
     public ProfileViewModel(@NonNull Application application) {
         super(application);
@@ -46,6 +48,7 @@ public class ProfileViewModel extends AndroidViewModel {
     public LiveData<Boolean> getIsFollowing() { return isFollowing; }
     public LiveData<String> getError() { return error; }
     public LiveData<List<Post>> getUserPosts() { return userPosts; }
+    public LiveData<Boolean> getDeletePostStatus() { return deletePostStatus; }
 
     public void loadUserProfile(String uid) {
         userRepository.getUser(uid, new UserRepository.OnUserLoadedListener() {
@@ -114,5 +117,11 @@ public class ProfileViewModel extends AndroidViewModel {
                     })
                     .addOnFailureListener(e -> error.setValue("Lỗi khi theo dõi"));
         }
+    }
+    
+    public void deletePost(String postId) {
+        FirebaseFirestore.getInstance().collection("posts").document(postId).delete()
+                .addOnSuccessListener(aVoid -> deletePostStatus.setValue(true))
+                .addOnFailureListener(e -> deletePostStatus.setValue(false));
     }
 }

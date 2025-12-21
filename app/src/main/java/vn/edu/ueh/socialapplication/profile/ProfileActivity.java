@@ -8,6 +8,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
@@ -23,9 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-import vn.edu.ueh.socialapplication.profile.EditProfileActivity;
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.Post;
+import vn.edu.ueh.socialapplication.post.EditPostActivity;
 import vn.edu.ueh.socialapplication.post.PostAdapter;
 import vn.edu.ueh.socialapplication.post.PostDetailActivity;
 import vn.edu.ueh.socialapplication.utils.ImageUtils;
@@ -96,11 +97,10 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         followingLayout = findViewById(R.id.following_layout);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
-        // Setup RecyclerView chuẩn Recycle
         recyclerViewPosts.setHasFixedSize(true);
         recyclerViewPosts.setLayoutManager(new LinearLayoutManager(this));
         postList = new ArrayList<>();
-        postAdapter = new PostAdapter(postList, this);
+        postAdapter = new PostAdapter(this, postList, this);
         recyclerViewPosts.setAdapter(postAdapter);
 
         if (firebaseUser != null && !profileId.equals(firebaseUser.getUid())) {
@@ -136,7 +136,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         });
 
         viewModel.getUserPosts().observe(this, posts -> {
-            swipeRefreshLayout.setRefreshing(false); // Dừng hiệu ứng loading
+            swipeRefreshLayout.setRefreshing(false);
             if (posts != null) {
                 postAdapter.setPosts(posts);
                 postsCount.setText(String.valueOf(posts.size()));
@@ -147,6 +147,15 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
             swipeRefreshLayout.setRefreshing(false);
             if (errorMsg != null) {
                 Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show();
+            }
+        });
+        
+        viewModel.getDeletePostStatus().observe(this, isSuccess -> {
+            if (isSuccess != null && isSuccess) {
+                Toast.makeText(this, "Post deleted", Toast.LENGTH_SHORT).show();
+                viewModel.loadUserProfile(profileId);
+            } else if (isSuccess != null) {
+                Toast.makeText(this, "Failed to delete post", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -175,5 +184,23 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         Intent intent = new Intent(ProfileActivity.this, PostDetailActivity.class);
         intent.putExtra("post_object", post);
         startActivity(intent);
+    }
+    
+    @Override
+    public void onEditClick(Post post) {
+        Intent intent = new Intent(this, EditPostActivity.class);
+        intent.putExtra("post_id", post.getPostId());
+        intent.putExtra("post_content", post.getContent());
+        startActivity(intent);
+    }
+
+    @Override
+    public void onDeleteClick(Post post) {
+        new AlertDialog.Builder(this)
+            .setTitle("Delete Post")
+            .setMessage("Are you sure you want to delete this post?")
+            .setPositiveButton("Delete", (dialog, which) -> viewModel.deletePost(post.getPostId()))
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 }

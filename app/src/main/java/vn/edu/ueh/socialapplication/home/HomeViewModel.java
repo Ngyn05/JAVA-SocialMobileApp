@@ -11,6 +11,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,10 +29,12 @@ public class HomeViewModel extends AndroidViewModel {
     private final MutableLiveData<List<Post>> postsData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> isLastPage = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> deletePostStatus = new MutableLiveData<>();
+
 
     private DocumentSnapshot lastVisiblePost = null;
     private final int PAGE_SIZE = 10;
-    private boolean isGlobalFeed = false; // Cờ đánh dấu đang xem feed chung hay feed following
+    private boolean isGlobalFeed = false;
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
@@ -42,6 +45,8 @@ public class HomeViewModel extends AndroidViewModel {
     public LiveData<List<Post>> getPostsData() { return postsData; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
     public LiveData<Boolean> getIsLastPage() { return isLastPage; }
+    public LiveData<Boolean> getDeletePostStatus() { return deletePostStatus; }
+
 
     public void refreshFeed() {
         lastVisiblePost = null;
@@ -70,7 +75,6 @@ public class HomeViewModel extends AndroidViewModel {
             public void onUserLoaded(User user) {
                 List<String> following = user.getFollowing();
                 
-                // Nếu không follow ai, chuyển sang load Global Feed (tất cả bài viết)
                 if (following == null || following.isEmpty()) {
                     isGlobalFeed = true;
                     loadAllPosts(isRefresh);
@@ -103,7 +107,6 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
     private void loadAllPosts(boolean isRefresh) {
-        // Sử dụng getAllPosts nhưng có phân trang
         postRepository.getPostsByUserIdsPaginated(null, lastVisiblePost, PAGE_SIZE)
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     handleQuerySuccess(queryDocumentSnapshots, isRefresh);
@@ -149,5 +152,11 @@ public class HomeViewModel extends AndroidViewModel {
             isLastPage.postValue(true);
             isLoading.postValue(false);
         });
+    }
+    
+    public void deletePost(String postId) {
+        FirebaseFirestore.getInstance().collection("posts").document(postId).delete()
+                .addOnSuccessListener(aVoid -> deletePostStatus.setValue(true))
+                .addOnFailureListener(e -> deletePostStatus.setValue(false));
     }
 }

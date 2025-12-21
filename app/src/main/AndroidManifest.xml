@@ -26,6 +26,9 @@
             android:name=".post.CreatePostActivity"
             android:exported="false" />
         <activity
+            android:name=".post.EditPostActivity"
+            android:exported="false" />
+        <activity
             android:name=".profile.ProfileActivity"
             android:exported="false" />
         <activity
@@ -45,6 +48,9 @@
             android:exported="false" />
         <activity
             android:name=".profile.OtherProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".notification.NotificationActivity"
             android:exported="false" />
 
         <!-- Launcher Activity -->

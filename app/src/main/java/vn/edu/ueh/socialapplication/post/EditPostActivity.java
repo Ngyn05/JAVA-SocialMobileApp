@@ -1,19 +1,14 @@
 package vn.edu.ueh.socialapplication.post;
 
-import android.app.Activity;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -27,37 +22,23 @@ import de.hdodenhof.circleimageview.CircleImageView;
 import vn.edu.ueh.socialapplication.R;
 import vn.edu.ueh.socialapplication.data.model.User;
 
-public class CreatePostActivity extends AppCompatActivity {
+public class EditPostActivity extends AppCompatActivity {
 
-    private ImageView postImageView;
     private EditText postContentEditText;
-    private TextView btnPost;
-    private ImageView btnBack;
+    private ImageView postImageView;
     private ProgressBar progressBar;
-    private Button addPhotoButton;
+    private TextView btnSave;
     private CircleImageView userProfileImageView;
     private TextView userNameTextView;
-
-    private Uri imageUri;
+    private String postId;
     private PostViewModel postViewModel;
     private FirebaseFirestore db;
     private FirebaseUser currentUser;
 
-    private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-                    imageUri = result.getData().getData();
-                    Glide.with(this).load(imageUri).into(postImageView);
-                    postImageView.setVisibility(View.VISIBLE);
-                    addPhotoButton.setVisibility(View.GONE);
-                }
-            });
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_create_post);
+        setContentView(R.layout.activity_edit_post);
 
         db = FirebaseFirestore.getInstance();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -65,21 +46,30 @@ public class CreatePostActivity extends AppCompatActivity {
         PostViewModelFactory factory = new PostViewModelFactory(getApplication());
         postViewModel = new ViewModelProvider(this, factory).get(PostViewModel.class);
 
-        postImageView = findViewById(R.id.post_image_view);
         postContentEditText = findViewById(R.id.post_content_edit_text);
-        btnPost = findViewById(R.id.btnPost);
-        btnBack = findViewById(R.id.btnBack);
+        postImageView = findViewById(R.id.post_image_view);
         progressBar = findViewById(R.id.progress_bar);
-        addPhotoButton = findViewById(R.id.add_photo_button);
+        ImageView btnBack = findViewById(R.id.btnBack);
+        btnSave = findViewById(R.id.btnSave);
         userProfileImageView = findViewById(R.id.user_profile_image);
         userNameTextView = findViewById(R.id.user_name);
 
-        addPhotoButton.setOnClickListener(v -> openImagePicker());
-        postImageView.setOnClickListener(v -> openImagePicker());
+        Intent intent = getIntent();
+        postId = intent.getStringExtra("post_id");
+        String currentContent = intent.getStringExtra("post_content");
+        String postImageUrl = intent.getStringExtra("post_image_url");
 
-        btnPost.setOnClickListener(v -> createPost());
+        if (currentContent != null) {
+            postContentEditText.setText(currentContent);
+        }
+
+        if (postImageUrl != null && !postImageUrl.isEmpty()) {
+            postImageView.setVisibility(View.VISIBLE);
+            Glide.with(this).load(postImageUrl).into(postImageView);
+        }
 
         btnBack.setOnClickListener(v -> finish());
+        btnSave.setOnClickListener(v -> savePost());
 
         loadUserProfile();
         observeViewModel();
@@ -102,33 +92,33 @@ public class CreatePostActivity extends AppCompatActivity {
         }
     }
 
-    private void openImagePicker() {
-        Intent intent = new Intent(Intent.ACTION_PICK);
-        intent.setType("image/*");
-        imagePickerLauncher.launch(intent);
-    }
+    private void savePost() {
+        String newContent = postContentEditText.getText().toString().trim();
 
-    private void createPost() {
-        String content = postContentEditText.getText().toString().trim();
-        if (content.isEmpty() && imageUri == null) {
-            Toast.makeText(this, "Please add content or an image", Toast.LENGTH_SHORT).show();
+        if (newContent.isEmpty()) {
+            Toast.makeText(this, "Content cannot be empty", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        setLoading(true);
-        postViewModel.createPost(content, imageUri);
+        if (postId != null) {
+            setLoading(true);
+            postViewModel.updatePost(postId, newContent);
+        }
     }
 
     private void observeViewModel() {
-        postViewModel.getPostCreationResult().observe(this, success -> {
+        postViewModel.getPostUpdateResult().observe(this, success -> {
             if (success) {
                 setLoading(false);
-                Toast.makeText(this, "Post created successfully", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Post updated successfully", Toast.LENGTH_SHORT).show();
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra("updated_content", postContentEditText.getText().toString().trim());
+                setResult(RESULT_OK, resultIntent);
                 finish();
             }
         });
 
-        postViewModel.getPostCreationError().observe(this, error -> {
+        postViewModel.getPostUpdateError().observe(this, error -> {
             if (error != null) {
                 setLoading(false);
                 Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
@@ -138,6 +128,6 @@ public class CreatePostActivity extends AppCompatActivity {
 
     private void setLoading(boolean isLoading) {
         progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
-        btnPost.setEnabled(!isLoading);
+        btnSave.setEnabled(!isLoading);
     }
 }

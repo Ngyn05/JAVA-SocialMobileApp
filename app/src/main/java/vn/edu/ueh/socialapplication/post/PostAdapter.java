@@ -1,33 +1,63 @@
 package vn.edu.ueh.socialapplication.post;
 
-import android.util.Log;
+import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.auth.FirebaseAuth;
-
 import java.util.ArrayList;
 import java.util.List;
 import vn.edu.ueh.socialapplication.R;
+import vn.edu.ueh.socialapplication.data.model.Notification;
 import vn.edu.ueh.socialapplication.data.model.Post;
+import vn.edu.ueh.socialapplication.data.model.User;
+import vn.edu.ueh.socialapplication.data.repository.NotificationRepository;
+import vn.edu.ueh.socialapplication.data.repository.UserRepository;
 
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
     private String currentUserId = FirebaseAuth.getInstance().getUid();
     private List<Post> postList;
     private final OnPostClickListener listener;
+    private Context context;
+    private User currentUser;
 
-    public PostAdapter(List<Post> postList, OnPostClickListener listener) {
+    public PostAdapter(Context context, List<Post> postList, OnPostClickListener listener) {
+        this.context = context;
         this.postList = postList;
         this.listener = listener;
+        loadCurrentUser();
+    }
+
+    private void loadCurrentUser() {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser != null) {
+            UserRepository userRepository = new UserRepository();
+            userRepository.getUser(firebaseUser.getUid(), new UserRepository.OnUserLoadedListener() {
+                @Override
+                public void onUserLoaded(User user) {
+                    currentUser = user;
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    // Handle error
+                }
+            });
+        }
     }
 
     @NonNull
@@ -74,6 +104,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
     public interface OnPostClickListener {
         void onCommentClick(Post post);
+        void onEditClick(Post post);
+        void onDeleteClick(Post post);
     }
 
     public void toggleLike(int position) {
@@ -85,7 +117,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         List<String> likes = post.getLikes();
         if (likes == null) likes = new ArrayList<>();
 
-        if (likes.contains(currentUserId)) {
+        boolean isLiked = likes.contains(currentUserId);
+
+        if (isLiked) {
             likes.remove(currentUserId);
         } else {
             likes.add(currentUserId);
@@ -94,10 +128,27 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         notifyItemChanged(position, "LIKE_UPDATE");
 
         DocumentReference postRef = FirebaseFirestore.getInstance().collection("posts").document(postId);
-        if (likes.contains(currentUserId)) {
+        if (!isLiked) {
             postRef.update("likes", FieldValue.arrayUnion(currentUserId));
+            sendLikeNotification(post);
         } else {
             postRef.update("likes", FieldValue.arrayRemove(currentUserId));
+        }
+    }
+
+    private void sendLikeNotification(Post post) {
+        if (currentUser != null && !post.getUserId().equals(currentUserId)) {
+            String message = currentUser.getUserName() + " liked your post.";
+            Notification notification = new Notification(
+                    post.getUserId(),
+                    currentUserId,
+                    currentUser.getUserName(),
+                    currentUser.getAvatar(),
+                    post.getPostId(),
+                    message
+            );
+            NotificationRepository notificationRepository = new NotificationRepository();
+            notificationRepository.sendNotification(notification);
         }
     }
 
@@ -105,7 +156,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         TextView tvName, tvContent, tvDate, tvLikeCount, tvCommentCount;
         ImageView imgPost;
         CardView cardImage;
-        ImageView btnComment, btnLike;
+        ImageView btnComment, btnLike, btnMore;
         ImageView imgAvatar;
 
         public PostViewHolder(@NonNull View itemView) {
@@ -120,6 +171,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             btnComment = itemView.findViewById(R.id.btnComment);
             btnLike = itemView.findViewById(R.id.btnLike);
             imgAvatar = itemView.findViewById(R.id.imgAvatar);
+            btnMore = itemView.findViewById(R.id.btnMore);
         }
 
         public void bind(final Post post, final OnPostClickListener listener) {
@@ -154,6 +206,31 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION) toggleLike(position);
             });
+            
+            if (currentUserId != null && currentUserId.equals(post.getUserId())) {
+                btnMore.setVisibility(View.VISIBLE);
+            } else {
+                btnMore.setVisibility(View.GONE);
+            }
+
+            btnMore.setOnClickListener(v -> showPopupMenu(v, post, listener));
+        }
+        
+        private void showPopupMenu(View view, Post post, OnPostClickListener listener) {
+            PopupMenu popup = new PopupMenu(context, view);
+            popup.getMenuInflater().inflate(R.menu.post_options_menu, popup.getMenu());
+            popup.setOnMenuItemClickListener(item -> {
+                int itemId = item.getItemId();
+                if (itemId == R.id.menu_edit) {
+                    listener.onEditClick(post);
+                    return true;
+                } else if (itemId == R.id.menu_delete) {
+                    listener.onDeleteClick(post);
+                    return true;
+                }
+                return false;
+            });
+            popup.show();
         }
     }
 }

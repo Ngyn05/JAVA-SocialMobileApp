@@ -17,6 +17,8 @@ public class PostViewModel extends AndroidViewModel {
     private final PostRepository postRepository;
     private final MutableLiveData<Boolean> postCreationResult = new MutableLiveData<>();
     private final MutableLiveData<String> postCreationError = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> postUpdateResult = new MutableLiveData<>();
+    private final MutableLiveData<String> postUpdateError = new MutableLiveData<>();
 
     public PostViewModel(@NonNull Application application) {
         super(application);
@@ -29,6 +31,14 @@ public class PostViewModel extends AndroidViewModel {
 
     public LiveData<String> getPostCreationError() {
         return postCreationError;
+    }
+
+    public LiveData<Boolean> getPostUpdateResult() {
+        return postUpdateResult;
+    }
+
+    public LiveData<String> getPostUpdateError() {
+        return postUpdateError;
     }
 
     public void createPost(String content, Uri imageUri) {
@@ -48,5 +58,19 @@ public class PostViewModel extends AndroidViewModel {
         } else {
             postCreationError.postValue("User not logged in.");
         }
+    }
+
+    public void updatePost(String postId, String content) {
+        postRepository.updatePost(postId, content, new PostRepository.PostUpdateCallback() {
+            @Override
+            public void onSuccess() {
+                postUpdateResult.postValue(true);
+            }
+
+            @Override
+            public void onError(String errorMessage) {
+                postUpdateError.postValue(errorMessage);
+            }
+        });
     }
 }

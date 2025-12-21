@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -25,9 +26,10 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
-import java.util.List;
 
+import vn.edu.ueh.socialapplication.notification.NotificationActivity;
 import vn.edu.ueh.socialapplication.post.CreatePostActivity;
+import vn.edu.ueh.socialapplication.post.EditPostActivity;
 import vn.edu.ueh.socialapplication.profile.EditProfileActivity;
 import vn.edu.ueh.socialapplication.utils.ImageUtils;
 import vn.edu.ueh.socialapplication.auth.LoginActivity;
@@ -50,6 +52,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     private ImageView profileImage;
     private ImageView addPostIcon;
     private ImageView searchIcon;
+    private ImageView notificationIcon;
     private ProgressBar progressBar;
     private TextView noResultsText;
     private UserRepository userRepository;
@@ -69,39 +72,31 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
             });
         }
 
-        // Initialize views
         profileImage = findViewById(R.id.profile_image);
         addPostIcon = findViewById(R.id.add_post_icon);
         searchIcon = findViewById(R.id.search_icon);
+        notificationIcon = findViewById(R.id.notification_icon);
         progressBar = findViewById(R.id.progress_bar_home);
         noResultsText = findViewById(R.id.no_results_text_home);
 
         userRepository = new UserRepository();
-
-        // --- ÁNH XẠ VIEW ---
+        
         rvPosts = findViewById(R.id.rvPosts);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         
         layoutManager = new LinearLayoutManager(this);
         rvPosts.setLayoutManager(layoutManager);
-
-        // Khởi tạo adapter
-        postAdapter = new PostAdapter(new ArrayList<>(), this);
+        
+        postAdapter = new PostAdapter(this, new ArrayList<>(), this);
         rvPosts.setAdapter(postAdapter);
-
-        // --- KHỞI TẠO VIEWMODEL ---
+        
         homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
-
-        // --- LẮNG NGHE DỮ LIỆU ---
+        
         observeViewModel();
         setupListeners();
-
-        // --- SETUP SWIPE TO REFRESH ---
-        swipeRefreshLayout.setOnRefreshListener(() -> {
-            homeViewModel.refreshFeed();
-        });
-
-        // --- SETUP PAGINATION SCROLL LISTENER ---
+        
+        swipeRefreshLayout.setOnRefreshListener(() -> homeViewModel.refreshFeed());
+        
         rvPosts.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -119,8 +114,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
                 }
             }
         });
-
-        // --- TẢI DỮ LIỆU BAN ĐẦU ---
+        
         swipeRefreshLayout.setRefreshing(true);
         homeViewModel.refreshFeed();
     }
@@ -139,10 +133,13 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
                 swipeRefreshLayout.setRefreshing(false);
             }
         });
-
-        homeViewModel.getIsLastPage().observe(this, isLastPage -> {
-            if (isLastPage) {
-                Log.d("HomeActivity", "Đã tải hết tất cả bài viết.");
+        
+        homeViewModel.getDeletePostStatus().observe(this, isSuccess -> {
+            if (isSuccess != null && isSuccess) {
+                Toast.makeText(this, "Post deleted", Toast.LENGTH_SHORT).show();
+                homeViewModel.refreshFeed();
+            } else if (isSuccess != null) {
+                Toast.makeText(this, "Failed to delete post", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -157,6 +154,24 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         Intent intent = new Intent(HomeActivity.this, PostDetailActivity.class);
         intent.putExtra("post_object", post);
         startActivity(intent);
+    }
+    
+    @Override
+    public void onEditClick(Post post) {
+        Intent intent = new Intent(this, EditPostActivity.class);
+        intent.putExtra("post_id", post.getPostId());
+        intent.putExtra("post_content", post.getContent());
+        startActivity(intent);
+    }
+
+    @Override
+    public void onDeleteClick(Post post) {
+        new AlertDialog.Builder(this)
+            .setTitle("Delete Post")
+            .setMessage("Are you sure you want to delete this post?")
+            .setPositiveButton("Delete", (dialog, which) -> homeViewModel.deletePost(post.getPostId()))
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     @Override
@@ -180,6 +195,12 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         if (addPostIcon != null) {
             addPostIcon.setOnClickListener(v -> {
                 startActivity(new Intent(HomeActivity.this, CreatePostActivity.class));
+            });
+        }
+
+        if (notificationIcon != null) {
+            notificationIcon.setOnClickListener(v -> {
+                startActivity(new Intent(HomeActivity.this, NotificationActivity.class));
             });
         }
     }
