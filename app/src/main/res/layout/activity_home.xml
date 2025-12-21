@@ -59,10 +59,20 @@
             android:src="@drawable/ic_add_box" />
 
         <ImageView
-            android:id="@+id/notification_icon"
+            android:id="@+id/chat_icon"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_toStartOf="@id/add_post_icon"
+            android:layout_centerVertical="true"
+            android:padding="8dp"
+            android:layout_marginEnd="8dp"
+            android:src="@android:drawable/sym_action_chat" />
+
+        <ImageView
+            android:id="@+id/notification_icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_toStartOf="@id/chat_icon"
             android:layout_centerVertical="true"
             android:padding="8dp"
             android:layout_marginEnd="8dp"

@@ -55,6 +55,8 @@
         <activity
             android:name=".profile.FollowListActivity"
             android:exported="false" />
+        <activity android:name=".chat.ChatActivity" />
+        <activity android:name=".chat.ChatListActivity" />
 
         <!-- Launcher Activity -->
         <activity

@@ -36,6 +36,7 @@ dependencies {
 
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-database") // Thêm dòng này
 
     implementation(libs.appcompat)
     implementation(libs.material)

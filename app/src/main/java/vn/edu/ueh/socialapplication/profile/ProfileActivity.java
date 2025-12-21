@@ -3,6 +3,7 @@ package vn.edu.ueh.socialapplication.profile;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageButton; // Thêm import này
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -25,6 +26,7 @@ import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import vn.edu.ueh.socialapplication.R;
+import vn.edu.ueh.socialapplication.chat.ChatActivity; // Thêm import này
 import vn.edu.ueh.socialapplication.data.model.Post;
 import vn.edu.ueh.socialapplication.data.model.User;
 import vn.edu.ueh.socialapplication.post.EditPostActivity;
@@ -38,6 +40,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
     private TextView postsCount, followersCount, followingCount, fullname, bio, toolbarTitle;
     private MaterialButton btnAction;
     private ImageView optionsMenu;
+    private ImageButton btnChat; // Khai báo ImageButton
     private RecyclerView recyclerViewPosts;
     private PostAdapter postAdapter;
     private List<Post> postList;
@@ -93,6 +96,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         bio = findViewById(R.id.bio);
         btnAction = findViewById(R.id.btn_action);
         optionsMenu = findViewById(R.id.options_menu);
+        btnChat = findViewById(R.id.btn_chat); // Khởi tạo ImageButton
         recyclerViewPosts = findViewById(R.id.recycler_view_posts);
         toolbarTitle = findViewById(R.id.toolbar_title);
         followersLayout = findViewById(R.id.followers_layout);
@@ -107,6 +111,9 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
 
         if (firebaseUser != null && !profileId.equals(firebaseUser.getUid())) {
             optionsMenu.setVisibility(View.GONE);
+            btnChat.setVisibility(View.VISIBLE); // Hiển thị nút chat nếu không phải profile của mình
+        } else {
+            btnChat.setVisibility(View.GONE); // Ẩn nút chat nếu là profile của mình
         }
     }
 
@@ -174,6 +181,18 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
                 startActivity(new Intent(ProfileActivity.this, EditProfileActivity.class));
             } else {
                 viewModel.toggleFollow(profileId);
+            }
+        });
+
+        // Thêm listener cho nút chat
+        btnChat.setOnClickListener(v -> {
+            if (currentUser != null) {
+                Intent intent = new Intent(ProfileActivity.this, ChatActivity.class);
+                intent.putExtra("otherUserId", profileId);
+                intent.putExtra("otherUsername", currentUser.getUserName());
+                startActivity(intent);
+            } else {
+                Toast.makeText(ProfileActivity.this, "User data not loaded yet.", Toast.LENGTH_SHORT).show();
             }
         });
 

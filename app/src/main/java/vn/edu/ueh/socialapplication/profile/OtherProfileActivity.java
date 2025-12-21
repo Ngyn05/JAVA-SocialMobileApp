@@ -5,6 +5,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -26,6 +27,7 @@ import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import vn.edu.ueh.socialapplication.R;
+import vn.edu.ueh.socialapplication.chat.ChatActivity;
 import vn.edu.ueh.socialapplication.data.model.Post;
 import vn.edu.ueh.socialapplication.data.model.User;
 import vn.edu.ueh.socialapplication.post.EditPostActivity;
@@ -38,6 +40,7 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
     private CircleImageView imageProfile;
     private TextView postsCount, followersCount, followingCount, fullname, bio, toolbarTitle;
     private MaterialButton btnFollow;
+    private ImageButton btnChat;
     private ImageView backButton;
     private RecyclerView recyclerViewPosts;
     private PostAdapter postAdapter;
@@ -97,6 +100,7 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
         fullname = findViewById(R.id.fullname);
         bio = findViewById(R.id.bio);
         btnFollow = findViewById(R.id.btn_follow);
+        btnChat = findViewById(R.id.btn_chat);
         recyclerViewPosts = findViewById(R.id.recycler_view_posts);
         toolbarTitle = findViewById(R.id.toolbar_title);
         followersLayout = findViewById(R.id.followers_layout);
@@ -163,6 +167,15 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
             } else {
                 otherProfileViewModel.unfollowUser(currentUserId, profileId);
             }
+        });
+
+        btnChat.setOnClickListener(v -> {
+            Intent intent = new Intent(OtherProfileActivity.this, ChatActivity.class);
+            intent.putExtra("otherUserId", profileId);
+            if (currentUser != null) {
+                intent.putExtra("otherUsername", currentUser.getUserName());
+            }
+            startActivity(intent);
         });
 
         followersLayout.setOnClickListener(v -> {

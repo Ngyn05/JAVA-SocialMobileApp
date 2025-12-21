@@ -32,6 +32,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 
+import vn.edu.ueh.socialapplication.chat.ChatListActivity;
 import vn.edu.ueh.socialapplication.notification.NotificationActivity;
 import vn.edu.ueh.socialapplication.post.CreatePostActivity;
 import vn.edu.ueh.socialapplication.post.EditPostActivity;
@@ -58,6 +59,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
     private ImageView addPostIcon;
     private ImageView searchIcon;
     private ImageView notificationIcon;
+    private ImageView chatIcon;
     private ProgressBar progressBar;
     private TextView noResultsText;
     private UserRepository userRepository;
@@ -82,6 +84,7 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         addPostIcon = findViewById(R.id.add_post_icon);
         searchIcon = findViewById(R.id.search_icon);
         notificationIcon = findViewById(R.id.notification_icon);
+        chatIcon = findViewById(R.id.chat_icon);
         progressBar = findViewById(R.id.progress_bar_home);
         noResultsText = findViewById(R.id.no_results_text_home);
 
@@ -216,6 +219,12 @@ public class HomeActivity extends AppCompatActivity implements PostAdapter.OnPos
         if (notificationIcon != null) {
             notificationIcon.setOnClickListener(v -> {
                 startActivity(new Intent(HomeActivity.this, NotificationActivity.class));
+            });
+        }
+
+        if (chatIcon != null) {
+            chatIcon.setOnClickListener(v -> {
+                startActivity(new Intent(HomeActivity.this, ChatListActivity.class));
             });
         }
     }

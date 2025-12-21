@@ -176,17 +176,35 @@
                     android:textColor="@android:color/black"
                     tools:text="This is user bio..." />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_follow"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="horizontal"
                     android:layout_marginTop="16dp"
-                    android:text="Follow"
-                    android:textAllCaps="false"
-                    app:cornerRadius="5dp"
-                    android:backgroundTint="#00C853"
-                    android:textColor="@android:color/white"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                    android:gravity="center_vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_follow"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Follow"
+                        android:textAllCaps="false"
+                        app:cornerRadius="5dp"
+                        android:backgroundTint="#00C853"
+                        android:textColor="@android:color/white"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                    <ImageButton
+                        android:id="@+id/btn_chat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:src="@android:drawable/sym_action_chat"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        app:tint="@color/design_default_color_primary"
+                        android:contentDescription="Chat with user"/>
+                </LinearLayout>
 
             </LinearLayout>
 
