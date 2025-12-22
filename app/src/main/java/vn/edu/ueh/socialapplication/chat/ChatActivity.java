@@ -44,6 +44,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private String otherUserId;
     private ValueEventListener seenListener;
+    private ValueEventListener messagesListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,7 +124,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void readMessages(String myid, String userid) {
-        reference.child("Chats").addValueEventListener(new ValueEventListener() {
+        messagesListener = reference.child("Chats").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 mMessages.clear();
@@ -136,12 +137,13 @@ public class ChatActivity extends AppCompatActivity {
                     }
                 }
                 messageAdapter.setMessages(mMessages);
-                recyclerViewChat.scrollToPosition(mMessages.size() - 1);
+                if (mMessages.size() > 0) {
+                    recyclerViewChat.scrollToPosition(mMessages.size() - 1);
+                }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Toast.makeText(ChatActivity.this, "Failed to load messages: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -152,7 +154,8 @@ public class ChatActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     Message message = snapshot.getValue(Message.class);
-                    if (message.getReceiverId().equals(firebaseUser.getUid()) && message.getSenderId().equals(userid)) {
+                    if (message != null && message.getReceiverId().equals(firebaseUser.getUid()) && 
+                        message.getSenderId().equals(userid) && !message.getIsRead()) {
                         HashMap<String, Object> hashMap = new HashMap<>();
                         hashMap.put("isRead", true);
                         snapshot.getRef().updateChildren(hashMap);
@@ -162,16 +165,20 @@ public class ChatActivity extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-
             }
         });
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        if (reference != null && seenListener != null) { // Added null check
-            reference.removeEventListener(seenListener);
+    protected void onStop() {
+        super.onStop();
+        if (reference != null) {
+            if (seenListener != null) {
+                reference.child("Chats").removeEventListener(seenListener);
+            }
+            if (messagesListener != null) {
+                reference.child("Chats").removeEventListener(messagesListener);
+            }
         }
     }
 }

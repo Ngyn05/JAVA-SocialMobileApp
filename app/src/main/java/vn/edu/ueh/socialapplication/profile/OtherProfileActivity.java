@@ -52,13 +52,17 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
     private String profileId;
     private String currentUserId;
     private boolean isFollowing = false;
-    private User currentUser;
+    private User targetUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         profileId = getIntent().getStringExtra("USER_ID");
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            finish();
+            return;
+        }
         currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         // Redirect to own profile if viewing self
@@ -70,8 +74,8 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
 
         setContentView(R.layout.activity_other_profile);
 
-
         if (profileId == null) {
+            Toast.makeText(this, "Không tìm thấy người dùng", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -83,6 +87,7 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
         observeViewModel();
         setupListeners();
 
+        // Load data
         profileViewModel.loadUserProfile(profileId);
     }
 
@@ -118,15 +123,19 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
     private void observeViewModel() {
         profileViewModel.getUser().observe(this, user -> {
             if (user != null) {
-                currentUser = user;
+                targetUser = user;
                 if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
                     ImageUtils.loadImage(user.getAvatar(), imageProfile);
+                } else {
+                    imageProfile.setImageResource(R.drawable.ic_account_circle);
                 }
+                
                 fullname.setText(user.getUserName());
-                userIdTv.setText("@" + user.getUserId());
+                userIdTv.setText("@" + (user.getUserId() != null ? user.getUserId() : "user"));
                 toolbarTitle.setText(user.getUserName());
-                bio.setText(user.getBio());
+                bio.setText(user.getBio() != null ? user.getBio() : "");
 
+                // Cập nhật trạng thái follow từ danh sách followers của targetUser
                 if (user.getFollowers() != null && user.getFollowers().contains(currentUserId)) {
                     isFollowing = true;
                 } else {
@@ -149,75 +158,68 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
         otherProfileViewModel.getError().observe(this, errorMsg -> {
             if (errorMsg != null) {
                 Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show();
-                // If there's an error, revert the state
+                // Hoàn tác trạng thái UI nếu lỗi
                 isFollowing = !isFollowing;
                 updateFollowButtonState();
-                updateFollowerCount(isFollowing);
             }
+        });
+        
+        profileViewModel.getIsFollowing().observe(this, following -> {
+            isFollowing = following;
+            updateFollowButtonState();
         });
     }
 
     private void setupListeners() {
         backButton.setOnClickListener(v -> finish());
+        
         btnFollow.setOnClickListener(v -> {
+            // Chuyển đổi trạng thái ngay lập tức trên UI để tăng trải nghiệm (Optimistic UI)
             isFollowing = !isFollowing;
             updateFollowButtonState();
-            updateFollowerCount(isFollowing);
-
-            if (isFollowing) {
-                otherProfileViewModel.followUser(currentUserId, profileId);
-            } else {
-                otherProfileViewModel.unfollowUser(currentUserId, profileId);
-            }
+            
+            // Gọi ViewModel để xử lý logic thực tế
+            profileViewModel.toggleFollow(profileId);
         });
 
         btnChat.setOnClickListener(v -> {
             Intent intent = new Intent(OtherProfileActivity.this, ChatActivity.class);
             intent.putExtra("otherUserId", profileId);
-            if (currentUser != null) {
-                intent.putExtra("otherUsername", currentUser.getUserName());
+            if (targetUser != null) {
+                intent.putExtra("otherUsername", targetUser.getUserName());
             }
             startActivity(intent);
         });
 
         followersLayout.setOnClickListener(v -> {
-            if (currentUser != null && currentUser.getFollowers() != null && !currentUser.getFollowers().isEmpty()) {
+            if (targetUser != null && targetUser.getFollowers() != null) {
                 Intent intent = new Intent(this, FollowListActivity.class);
                 intent.putExtra("title", "Followers");
-                intent.putStringArrayListExtra("userIds", new ArrayList<>(currentUser.getFollowers()));
+                intent.putStringArrayListExtra("userIds", new ArrayList<>(targetUser.getFollowers()));
                 startActivity(intent);
             }
         });
 
         followingLayout.setOnClickListener(v -> {
-            if (currentUser != null && currentUser.getFollowing() != null && !currentUser.getFollowing().isEmpty()) {
+            if (targetUser != null && targetUser.getFollowing() != null) {
                 Intent intent = new Intent(this, FollowListActivity.class);
                 intent.putExtra("title", "Following");
-                intent.putStringArrayListExtra("userIds", new ArrayList<>(currentUser.getFollowing()));
+                intent.putStringArrayListExtra("userIds", new ArrayList<>(targetUser.getFollowing()));
                 startActivity(intent);
             }
         });
     }
 
-    private void updateFollowerCount(boolean isFollowing) {
-        int currentFollowers = Integer.parseInt(followersCount.getText().toString());
-        if (isFollowing) {
-            followersCount.setText(String.valueOf(currentFollowers + 1));
-        } else {
-            followersCount.setText(String.valueOf(currentFollowers - 1));
-        }
-    }
-
     private void updateFollowButtonState() {
         if (isFollowing) {
             btnFollow.setText("Following");
-            btnFollow.setBackgroundColor(Color.WHITE);
+            btnFollow.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
             btnFollow.setTextColor(Color.BLACK);
             btnFollow.setStrokeColor(ColorStateList.valueOf(Color.LTGRAY));
             btnFollow.setStrokeWidth(2);
         } else {
             btnFollow.setText("Follow");
-            btnFollow.setBackgroundColor(ContextCompat.getColor(this, R.color.teal_700));
+            btnFollow.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.teal_700)));
             btnFollow.setTextColor(Color.WHITE);
             btnFollow.setStrokeWidth(0);
         }
@@ -232,19 +234,11 @@ public class OtherProfileActivity extends AppCompatActivity implements PostAdapt
 
     @Override
     public void onEditClick(Post post) {
-        Intent intent = new Intent(this, EditPostActivity.class);
-        intent.putExtra("post_id", post.getPostId());
-        intent.putExtra("post_content", post.getContent());
-        startActivity(intent);
+        // Only owner can edit, but adapter might show it. Just in case.
     }
 
     @Override
     public void onDeleteClick(Post post) {
-        new AlertDialog.Builder(this)
-                .setTitle("Delete Post")
-                .setMessage("Are you sure you want to delete this post?")
-                .setPositiveButton("Delete", (dialog, which) -> profileViewModel.deletePost(post.getPostId()))
-                .setNegativeButton("Cancel", null)
-                .show();
+        // Only owner can delete.
     }
 }

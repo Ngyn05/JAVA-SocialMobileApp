@@ -6,6 +6,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -49,6 +50,14 @@ public class ChatListActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_list);
+
+        Toolbar toolbar = findViewById(R.id.toolbar_chat_list);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+        toolbar.setNavigationOnClickListener(v -> finish());
 
         recyclerView = findViewById(R.id.recycler_view_chat_list);
         recyclerView.setHasFixedSize(true);
@@ -129,16 +138,17 @@ public class ChatListActivity extends AppCompatActivity {
     }
 
     private void fetchUsersAndDisplay(List<String> contactIds, Map<String, String> lastMessageMap, Map<String, Long> unreadCountMap, Map<String, Long> timestampMap) {
-        chatContacts.clear();
-
         if (contactIds.isEmpty()) {
             Log.d(TAG, "No contact IDs found, setting empty chat contacts.");
-            chatListAdapter.setChatContacts(chatContacts);
+            chatContacts.clear();
+            chatListAdapter.notifyDataSetChanged();
             return;
         }
 
         AtomicInteger pendingUsers = new AtomicInteger(contactIds.size());
         Log.d(TAG, "Fetching details for " + contactIds.size() + " users from Firestore.");
+
+        List<ChatContact> tempContacts = new ArrayList<>();
 
         for (String id : contactIds) {
             usersFirestoreRef.document(id).get().addOnSuccessListener(documentSnapshot -> {
@@ -147,28 +157,33 @@ public class ChatListActivity extends AppCompatActivity {
                     user.setUserId(documentSnapshot.getId()); // Firestore document ID is the userId
                     String lastMessage = lastMessageMap.getOrDefault(id, "No message");
                     long unreadCount = unreadCountMap.getOrDefault(id, 0L);
-                    chatContacts.add(new ChatContact(user, lastMessage, unreadCount));
+                    tempContacts.add(new ChatContact(user, lastMessage, unreadCount));
                     Log.d(TAG, "Fetched user from Firestore: " + user.getUserName() + " (ID: " + user.getUserId() + ")");
                 } else {
                     Log.w(TAG, "User object is null from Firestore for ID: " + id + ". Document exists: " + documentSnapshot.exists());
                 }
 
                 if (pendingUsers.decrementAndGet() == 0) {
-                    Log.d(TAG, "All user fetches complete from Firestore. Total chat contacts: " + chatContacts.size());
-                    Collections.sort(chatContacts, (c1, c2) -> {
+                    Log.d(TAG, "All user fetches complete from Firestore. Total chat contacts: " + tempContacts.size());
+                    Collections.sort(tempContacts, (c1, c2) -> {
                         Long t1 = timestampMap.get(c1.getUser().getUserId());
                         Long t2 = timestampMap.get(c2.getUser().getUserId());
                         if (t1 == null) t1 = 0L;
                         if (t2 == null) t2 = 0L;
                         return t2.compareTo(t1);
                     });
-                    chatListAdapter.setChatContacts(chatContacts);
+                    
+                    chatContacts.clear();
+                    chatContacts.addAll(tempContacts);
+                    chatListAdapter.notifyDataSetChanged();
                 }
             }).addOnFailureListener(e -> {
                 Log.e(TAG, "Failed to fetch user from Firestore for ID " + id + ": " + e.getMessage());
                 if (pendingUsers.decrementAndGet() == 0) {
-                    Log.d(TAG, "All user fetches complete (with errors from Firestore). Total chat contacts: " + chatContacts.size());
-                    chatListAdapter.setChatContacts(chatContacts);
+                    Log.d(TAG, "All user fetches complete (with errors from Firestore). Total chat contacts: " + tempContacts.size());
+                    chatContacts.clear();
+                    chatContacts.addAll(tempContacts);
+                    chatListAdapter.notifyDataSetChanged();
                 }
             });
         }

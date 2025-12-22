@@ -70,6 +70,9 @@ public class SearchActivity extends AppCompatActivity implements UserAdapter.OnU
         backButton.setOnClickListener(v -> finish());
         clearTextIcon.setOnClickListener(v -> searchBar.setText(""));
 
+        // Load all users initially
+        searchUsers("");
+
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -91,14 +94,6 @@ public class SearchActivity extends AppCompatActivity implements UserAdapter.OnU
     }
 
     private void searchUsers(String query) {
-        if (query.isEmpty()) {
-            userList.clear();
-            userAdapter.notifyDataSetChanged();
-            noResultsText.setVisibility(View.GONE);
-            progressBar.setVisibility(View.GONE);
-            return;
-        }
-
         progressBar.setVisibility(View.VISIBLE);
         noResultsText.setVisibility(View.GONE);
 

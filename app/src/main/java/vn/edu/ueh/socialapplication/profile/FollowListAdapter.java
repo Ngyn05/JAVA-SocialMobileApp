@@ -46,15 +46,20 @@ public class FollowListAdapter extends RecyclerView.Adapter<FollowListAdapter.Vi
 
         if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
             Glide.with(context).load(user.getAvatar()).into(holder.imageProfile);
+        } else {
+            holder.imageProfile.setImageResource(R.drawable.ic_account_circle);
         }
 
         holder.itemView.setOnClickListener(v -> {
-            if (user.getUserId().equals(currentUserId)) {
+            String targetUid = user.getUid();
+            if (targetUid == null) targetUid = user.getUserId(); // Fallback if uid is not set correctly
+
+            if (targetUid != null && targetUid.equals(currentUserId)) {
                 Intent intent = new Intent(context, ProfileActivity.class);
                 context.startActivity(intent);
             } else {
                 Intent intent = new Intent(context, OtherProfileActivity.class);
-                intent.putExtra("USER_ID", user.getUserId());
+                intent.putExtra("USER_ID", targetUid);
                 context.startActivity(intent);
             }
         });

@@ -98,7 +98,19 @@ public class UserRepository {
 
     public void searchUsers(String queryText, String currentUserId, final OnUsersSearchedListener listener) {
         if (queryText == null || queryText.isEmpty()) {
-            listener.onUsersSearched(new ArrayList<>());
+            db.collection("users").get()
+                    .addOnSuccessListener(queryDocumentSnapshots -> {
+                        List<User> users = new ArrayList<>();
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            if (doc.getId().equals(currentUserId)) continue;
+                            User user = doc.toObject(User.class);
+                            if (user != null) {
+                                users.add(user);
+                            }
+                        }
+                        listener.onUsersSearched(users);
+                    })
+                    .addOnFailureListener(listener::onError);
             return;
         }
 
