@@ -9,7 +9,7 @@ import androidx.lifecycle.ViewModelProvider;
 import java.util.ArrayList;
 import java.util.List;
 
-import vn.edu.ueh.socialapplication.UserRepository;
+import vn.edu.ueh.socialapplication.data.repository.UserRepository;
 import vn.edu.ueh.socialapplication.data.model.User;
 
 public class FollowViewModel extends ViewModel {

@@ -14,6 +14,8 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.HashMap;
 import java.util.Map;
 
+import vn.edu.ueh.socialapplication.home.HomeActivity;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final int SPLASH_DELAY = 2000; // 2 seconds

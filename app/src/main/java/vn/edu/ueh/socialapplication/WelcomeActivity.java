@@ -7,6 +7,8 @@ import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import vn.edu.ueh.socialapplication.auth.LoginActivity;
+
 public class WelcomeActivity extends AppCompatActivity {
 
     @Override

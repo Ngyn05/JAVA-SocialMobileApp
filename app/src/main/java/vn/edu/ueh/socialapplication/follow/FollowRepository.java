@@ -1,98 +1,116 @@
 package vn.edu.ueh.socialapplication.follow;
 
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import vn.edu.ueh.socialapplication.data.model.User;
 
 public class FollowRepository {
 
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+    /**
+     * Thực hiện follow người dùng. Cập nhật mảng followers của đối phương và following của mình.
+     */
     public Task<Void> followUser(String currentUserId, String targetUserId) {
         WriteBatch batch = db.batch();
 
-        Map<String, Object> followerData = new HashMap<>();
-        followerData.put("timestamp", System.currentTimeMillis());
+        // Thêm currentUserId vào mảng followers của người được follow
+        batch.update(db.collection("users").document(targetUserId),
+                "followers", FieldValue.arrayUnion(currentUserId));
 
-        Map<String, Object> followingData = new HashMap<>();
-        followingData.put("timestamp", System.currentTimeMillis());
-
-        // Add to target user's followers
-        batch.set(db.collection("users").document(targetUserId)
-                .collection("followers").document(currentUserId), followerData);
-
-        // Add to current user's following
-        batch.set(db.collection("users").document(currentUserId)
-                .collection("following").document(targetUserId), followingData);
-
-        // Optional: Create notification (handled by Notification module usually, but we can trigger it here or Cloud Functions)
+        // Thêm targetUserId vào mảng following của người đang thực hiện follow
+        batch.update(db.collection("users").document(currentUserId),
+                "following", FieldValue.arrayUnion(targetUserId));
 
         return batch.commit();
     }
 
+    /**
+     * Thực hiện bỏ follow. Xóa UID khỏi mảng tương ứng.
+     */
     public Task<Void> unfollowUser(String currentUserId, String targetUserId) {
         WriteBatch batch = db.batch();
 
-        // Remove from target user's followers
-        batch.delete(db.collection("users").document(targetUserId)
-                .collection("followers").document(currentUserId));
+        batch.update(db.collection("users").document(targetUserId),
+                "followers", FieldValue.arrayRemove(currentUserId));
 
-        // Remove from current user's following
-        batch.delete(db.collection("users").document(currentUserId)
-                .collection("following").document(targetUserId));
+        batch.update(db.collection("users").document(currentUserId),
+                "following", FieldValue.arrayRemove(targetUserId));
 
         return batch.commit();
     }
 
+    /**
+     * Kiểm tra xem currentUserId có đang theo dõi targetUserId hay không.
+     */
     public Task<Boolean> isFollowing(String currentUserId, String targetUserId) {
-        return db.collection("users").document(currentUserId)
-                .collection("following").document(targetUserId).get()
-                .continueWith(task -> task.isSuccessful() && task.getResult().exists());
-    }
-
-    public Task<Integer> getFollowersCount(String userId) {
-        return db.collection("users").document(userId).collection("followers").get()
-                .continueWith(task -> task.isSuccessful() ? task.getResult().size() : 0);
-    }
-
-    public Task<Integer> getFollowingCount(String userId) {
-        return db.collection("users").document(userId).collection("following").get()
-                .continueWith(task -> task.isSuccessful() ? task.getResult().size() : 0);
-    }
-    
-    public Task<List<String>> getFollowersIds(String userId) {
-         return db.collection("users").document(userId).collection("followers").get()
+        return db.collection("users").document(currentUserId).get()
                 .continueWith(task -> {
-                    List<String> ids = new ArrayList<>();
-                    if (task.isSuccessful()) {
-                        for (DocumentSnapshot doc : task.getResult()) {
-                            ids.add(doc.getId());
-                        }
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        List<String> following = (List<String>) task.getResult().get("following");
+                        return following != null && following.contains(targetUserId);
                     }
-                    return ids;
+                    return false;
                 });
     }
 
+    /**
+     * Lấy số lượng người theo dõi từ mảng 'followers'.
+     */
+    public Task<Integer> getFollowersCount(String userId) {
+        return db.collection("users").document(userId).get()
+                .continueWith(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        List<String> followers = (List<String>) task.getResult().get("followers");
+                        return followers != null ? followers.size() : 0;
+                    }
+                    return 0;
+                });
+    }
+
+    /**
+     * Lấy số lượng người đang theo dõi từ mảng 'following'.
+     */
+    public Task<Integer> getFollowingCount(String userId) {
+        return db.collection("users").document(userId).get()
+                .continueWith(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        List<String> following = (List<String>) task.getResult().get("following");
+                        return following != null ? following.size() : 0;
+                    }
+                    return 0;
+                });
+    }
+
+    /**
+     * Lấy danh sách ID người theo dõi.
+     */
+    public Task<List<String>> getFollowersIds(String userId) {
+        return db.collection("users").document(userId).get()
+                .continueWith(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        List<String> followers = (List<String>) task.getResult().get("followers");
+                        return followers != null ? followers : new ArrayList<>();
+                    }
+                    return new ArrayList<>();
+                });
+    }
+
+    /**
+     * Lấy danh sách ID người đang theo dõi.
+     */
     public Task<List<String>> getFollowingIds(String userId) {
-        return db.collection("users").document(userId).collection("following").get()
-               .continueWith(task -> {
-                   List<String> ids = new ArrayList<>();
-                   if (task.isSuccessful()) {
-                       for (DocumentSnapshot doc : task.getResult()) {
-                           ids.add(doc.getId());
-                       }
-                   }
-                   return ids;
-               });
-   }
+        return db.collection("users").document(userId).get()
+                .continueWith(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        List<String> following = (List<String>) task.getResult().get("following");
+                        return following != null ? following : new ArrayList<>();
+                    }
+                    return new ArrayList<>();
+                });
+    }
 }
