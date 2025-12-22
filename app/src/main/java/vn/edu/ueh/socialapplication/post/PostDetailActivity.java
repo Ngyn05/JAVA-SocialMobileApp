@@ -51,7 +51,6 @@ public class PostDetailActivity extends AppCompatActivity {
         tvCaption = findViewById(R.id.tvCaption);
 
         ImageView imgPost = findViewById(R.id.imgPost);
-        ImageView imgPost2 = findViewById(R.id.imgPost2);
         CardView cardImage = findViewById(R.id.cardImage);
         ImageView btnLike = findViewById(R.id.btnLike);
         TextView tvLikeCount = findViewById(R.id.tvLikeCount);
@@ -73,7 +72,6 @@ public class PostDetailActivity extends AppCompatActivity {
             if (currentPost.getImage() != null && !currentPost.getImage().isEmpty()) {
                 cardImage.setVisibility(View.VISIBLE);
                 Glide.with(this).load(currentPost.getImage()).into(imgPost);
-                imgPost2.setVisibility(View.GONE);
             } else {
                 cardImage.setVisibility(View.GONE);
             }

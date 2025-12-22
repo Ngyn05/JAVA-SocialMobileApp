@@ -25,61 +25,51 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
 
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/imgAvatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_user_placeholder"
+            android:layout_marginLeft="5dp"
+            app:layout_constraintStart_toEndOf="@+id/btnBack"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
         <TextView
             android:id="@+id/tvUsername"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="10dp"
             android:text="quynh.anhh_ne"
-            android:textStyle="bold"
             android:textColor="@color/black"
             android:textSize="14sp"
-            app:layout_constraintStart_toEndOf="@id/btnBack"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/imgAvatar"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/tvThreads"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Threads"
-            android:textColor="@android:color/darker_gray"
-            android:textSize="12sp"
-            app:layout_constraintStart_toStartOf="@id/tvUsername"
-            app:layout_constraintTop_toBottomOf="@id/tvUsername" />
-        
         <TextView
             android:id="@+id/tvTimestamp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
             android:text="20h"
             android:textColor="@android:color/darker_gray"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@id/tvThreads"
-            app:layout_constraintTop_toTopOf="@id/tvThreads"
-            app:layout_constraintBottom_toBottomOf="@id/tvThreads"/>
-            
+            android:textSize="14sp"
+            android:layout_marginLeft="10dp"
+            app:layout_constraintStart_toEndOf="@id/tvUsername"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <ImageView
             android:id="@+id/btnMore"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_more"
-            app:tint="@android:color/darker_gray"
-            app:layout_constraintEnd_toStartOf="@id/btnFollow"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginEnd="8dp"/>
-
-        <Button
-            android:id="@+id/btnFollow"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:text="Follow"
-            android:backgroundTint="@color/black"
-            android:textColor="@color/white"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:tint="@android:color/darker_gray"
+            tools:layout_editor_absoluteX="274dp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -125,14 +115,6 @@
                         android:src="@drawable/test"
                         android:layout_marginEnd="4dp"/>
 
-                    <ImageView
-                        android:id="@+id/imgPost2"
-                        android:layout_width="0dp"
-                        android:layout_height="200dp"
-                        android:layout_weight="1"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/test"
-                        android:layout_marginStart="4dp"/>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -172,36 +154,6 @@
                     android:text="6"
                     android:textSize="14sp" />
 
-                <ImageView
-                    android:id="@+id/btnRepost"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginStart="20dp"
-                    android:src="@drawable/ic_repost" />
-
-                <TextView
-                    android:id="@+id/tvRepostCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="21"
-                    android:textSize="14sp" />
-
-                <ImageView
-                    android:id="@+id/btnShare"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginStart="20dp"
-                    android:src="@drawable/ic_share" />
-
-                 <TextView
-                    android:id="@+id/tvShareCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="65"
-                    android:textSize="14sp" />
-
             </LinearLayout>
 
             <LinearLayout
@@ -211,27 +163,10 @@
                 android:paddingTop="16dp"
                 android:gravity="center_vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Top"
-                    android:textStyle="bold"/>
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_arrow_down"/>
-
                 <View
                     android:layout_width="0dp"
                     android:layout_height="0dp"
                     android:layout_weight="1"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="View activity"
-                    android:textColor="@color/purple_500" />
 
             </LinearLayout>
 
@@ -268,30 +203,17 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Reply to quynh.anhh_ne..."
+            android:textSize="14sp"
+            android:hint="Comment"
             android:background="@drawable/rounded_edittext_background"
             android:padding="12dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"/>
-        
-        <ImageView
-            android:id="@+id/btnGallery"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_gallery"
-            android:layout_marginEnd="8dp"/>
-
-        <ImageView
-            android:id="@+id/btnGif"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_gif"
-            android:layout_marginEnd="8dp"/>
 
         <ImageView
             android:id="@+id/btnDetailSend"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:src="@android:drawable/ic_menu_send"/>
     </LinearLayout>
 

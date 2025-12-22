@@ -210,7 +210,7 @@
                         android:layout_marginStart="8dp"
                         android:src="@android:drawable/sym_action_chat"
                         android:background="?attr/selectableItemBackgroundBorderless"
-                        app:tint="@color/design_default_color_primary"
+                        app:tint="@android:color/darker_gray"
                         android:contentDescription="Chat with user"/>
                 </LinearLayout>
 
