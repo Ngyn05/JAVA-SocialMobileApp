@@ -28,8 +28,8 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
                     android:background="@android:color/white"
+                    android:orientation="vertical"
                     android:padding="16dp">
 
                     <LinearLayout
@@ -57,6 +57,7 @@
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
+
                                 <TextView
                                     android:id="@+id/posts_count"
                                     android:layout_width="wrap_content"
@@ -65,11 +66,12 @@
                                     android:textColor="@android:color/black"
                                     android:textSize="18sp"
                                     android:textStyle="bold" />
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Bài viết"
-                                    android:textSize="12sp"/>
+                                    android:textSize="12sp" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -79,6 +81,7 @@
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
+
                                 <TextView
                                     android:id="@+id/followers_count"
                                     android:layout_width="wrap_content"
@@ -87,11 +90,12 @@
                                     android:textColor="@android:color/black"
                                     android:textSize="18sp"
                                     android:textStyle="bold" />
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Follower"
-                                    android:textSize="12sp"/>
+                                    android:textSize="12sp" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -101,6 +105,7 @@
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
+
                                 <TextView
                                     android:id="@+id/following_count"
                                     android:layout_width="wrap_content"
@@ -109,11 +114,12 @@
                                     android:textColor="@android:color/black"
                                     android:textSize="18sp"
                                     android:textStyle="bold" />
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Following"
-                                    android:textSize="12sp"/>
+                                    android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
@@ -124,9 +130,17 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:textColor="@android:color/black"
-                        android:textStyle="bold"
                         android:textSize="16sp"
+                        android:textStyle="bold"
                         tools:text="Full Name" />
+
+                    <TextView
+                        android:id="@+id/tv_user_id"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="14sp"
+                        tools:text="\@username" />
 
                     <TextView
                         android:id="@+id/bio"
@@ -138,17 +152,17 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_action"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
+                        android:backgroundTint="@android:color/white"
                         android:text="Chỉnh sửa trang cá nhân"
                         android:textAllCaps="false"
-                        app:cornerRadius="4dp"
-                        android:backgroundTint="@android:color/white"
                         android:textColor="@android:color/black"
+                        app:cornerRadius="4dp"
                         app:strokeColor="@android:color/darker_gray"
-                        app:strokeWidth="1dp"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                        app:strokeWidth="1dp" />
                 </LinearLayout>
 
                 <View
@@ -169,8 +183,8 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:textColor="@android:color/black"
-                    android:textStyle="bold"
                     android:textSize="18sp"
+                    android:textStyle="bold"
                     tools:text="username" />
 
                 <ImageButton
@@ -178,10 +192,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="end"
+                    android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="16dp"
                     android:src="@drawable/ic_comment"
-                    app:tint="@android:color/black"
-                    android:background="?attr/selectableItemBackgroundBorderless" />
+                    app:tint="@android:color/black" />
 
                 <ImageView
                     android:id="@+id/options_menu"
@@ -206,8 +220,8 @@
             android:id="@+id/recycler_view_posts"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingTop="8dp"
             android:clipToPadding="false"
+            android:paddingTop="8dp"
             tools:listitem="@layout/item_post" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

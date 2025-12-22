@@ -38,7 +38,7 @@ import vn.edu.ueh.socialapplication.utils.ImageUtils;
 public class ProfileActivity extends AppCompatActivity implements PostAdapter.OnPostClickListener {
 
     private CircleImageView imageProfile;
-    private TextView postsCount, followersCount, followingCount, fullname, bio, toolbarTitle;
+    private TextView postsCount, followersCount, followingCount, fullname, userIdTv, bio, toolbarTitle;
     private MaterialButton btnAction;
     private ImageView optionsMenu;
     private ImageButton btnChat;
@@ -104,6 +104,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
         followersCount = findViewById(R.id.followers_count);
         followingCount = findViewById(R.id.following_count);
         fullname = findViewById(R.id.fullname);
+        userIdTv = findViewById(R.id.tv_user_id);
         bio = findViewById(R.id.bio);
         btnAction = findViewById(R.id.btn_action);
         optionsMenu = findViewById(R.id.options_menu);
@@ -136,6 +137,7 @@ public class ProfileActivity extends AppCompatActivity implements PostAdapter.On
                     ImageUtils.loadImage(user.getAvatar(), imageProfile);
                 }
                 fullname.setText(user.getUserName());
+                userIdTv.setText("@" + user.getUserId());
                 toolbarTitle.setText(user.getUserName());
                 bio.setText(user.getBio());
             }
