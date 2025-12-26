@@ -27,10 +27,10 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Cloudinary
         try {
             Map<String, String> config = new HashMap<>();
-            config.put("cloud_name", "dt0drhz8d");
-            config.put("api_key", "893675145317651");
-            config.put("api_secret", "ktAd44YuxTMfeXjaIOEy4tcUsnI");
-            MediaManager.init(this, config);
+            // config.put("cloud_name", "cloud_name");
+            // config.put("api_key", "api_key");
+            // config.put("api_secret", "api_secret");
+            // MediaManager.init(this, config);
         } catch (Exception e) {
             // Already initialized
         }
